@@ -1,9 +1,37 @@
 [
   {
-    "id": "307814b3-2199-4502-af66-5c5490ec0d75",
-    "fact": "On Thursday, 11 June 2026, I owe Harsh 100 rupees.",
+    "id": "9dea4bbe-243a-4186-b36b-73ea9d3def1f",
+    "fact": "The user bought a flat in Sultanpur, Delhi, on loan.",
     "source": "web",
-    "original": "I owe Harsh 100 rupees",
-    "timestamp": "2026-06-10T22:01:23.100597"
+    "original": "So i bought a flat in sultanpur delhi on loan",
+    "timestamp": "2026-06-10T20:14:10.486429"
+  },
+  {
+    "id": "c3ec1c2b-f29c-4d5d-85a0-89a63ad2ce85",
+    "fact": "On the 24th of every month, I have 4 recurring payments: YouTube Premium on the 25th for 89, Home Loan EMI on the 3rd for 37,888, Life Insurance on the 8th for 2,049, and Personal Loan on the 10th for 31,864; I receive my salary on the 24th, and if it falls on a weekend, I receive it early.",
+    "source": "web",
+    "original": "I have 4 recurring payments that i do on 24th of every month I receive my salary if its weekend on 24 i got it early, youtube premium on 25th : 89,Home loan Emi on 3rd : 37888, Life insurance on 8th : 2049, Personal loan on 10th : 31864.",
+    "timestamp": "2026-06-10T21:04:15.155219"
+  },
+  {
+    "id": "ae05d8ce-0de0-418e-9426-97349a96187f",
+    "fact": "The user's exact pay in their account is 99,674, and they have 5,000 in Pluxee.",
+    "source": "web",
+    "original": "My exact pay in account is 99674 and 5k in pluxee",
+    "timestamp": "2026-06-10T21:31:26.128977"
+  },
+  {
+    "id": "db2b17f0-d859-470d-add3-ebf544c98107",
+    "fact": "The budget allocates 1500 for society maintenance and 2500 for a cook and cleaner.",
+    "source": "web",
+    "original": "1500 as society maintenance and 2.5k for cook and cleaner",
+    "timestamp": "2026-06-10T21:33:19.226352"
+  },
+  {
+    "id": "b19d2e97-c440-4f55-8fdb-0349b71443e7",
+    "fact": "Recurring maintenance occurs every month.",
+    "source": "web",
+    "original": "Yes these are also recurring every month along with maintenance",
+    "timestamp": "2026-06-10T21:39:19.164697"
   }
 ]

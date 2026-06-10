@@ -68,7 +68,7 @@
         }
 
         .brand-icon {
-            width: 32px;
+            width: 48px;
             height: 32px;
             background: #000000;
             border: 1px solid var(--primary);
@@ -424,8 +424,8 @@
 
 <body>
     <div class="login-container" id="login-screen">
-        <div class="brand-icon" style="margin: 0 auto 2rem auto; width: 64px; height: 64px; font-size: 2rem;">K</div>
-        <h1 style="text-align: center; margin-bottom: 2rem;">KAI SYSTEM</h1>
+        <div class="brand-icon" style="margin: 0 auto 2rem auto; width: 80px; height: 64px; font-size: 2rem;">KAI</div>
+        <h1 style="text-align: center; margin-bottom: 2rem;">KAI</h1>
         
         <form id="auth-form" onsubmit="handleAuth(event)">
             <input type="text" id="auth-name" placeholder="YOUR NAME" style="margin-bottom: 1rem; display: none;">
@@ -450,8 +450,8 @@
     <div class="app-container" id="app-screen" style="display: none;">
         <header>
             <div class="brand">
-                <div class="brand-icon">K</div>
-                <h1><span id="header-user-name">Kai</span> <span style="color:var(--text-muted); font-size:0.875rem; font-weight:normal;">System</span></h1>
+                <div class="brand-icon">KAI</div>
+                <h1><span id="header-user-name">Kai</span></h1>
             </div>
             <div class="nav-tabs">
                 <button class="tab-btn active" onclick="switchTab('chat')">Chat</button>
@@ -508,7 +508,26 @@
 
     <div class="toast" id="toast">Saved successfully!</div>
 
+    <!-- Recovery Phrase Modal -->
+    <div id="recovery-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
+        <div style="background:#050505; border:1px solid var(--border-glass); border-top:4px solid var(--primary); padding:2rem; max-width:400px; width:90%; text-align:center; box-shadow: 0 0 20px rgba(0, 255, 0, 0.15);">
+            <h2 style="color:var(--danger); margin-bottom:1rem;">CRITICAL WARNING</h2>
+            <p style="margin-bottom:1rem; font-size:0.875rem; color:var(--text-muted);">Please save this 12-word Recovery Phrase somewhere safe. It is the ONLY way to reset your password if you lose it.</p>
+            <div id="recovery-phrase-display" style="background:#000; border:1px solid var(--primary); padding:1rem; margin-bottom:1.5rem; color:var(--primary); font-family:monospace; font-size:1.1rem; line-height:1.5; letter-spacing:1px;"></div>
+            <button class="primary-btn" style="width:100%;" onclick="closeRecoveryModal()">I HAVE SAVED IT</button>
+        </div>
+    </div>
+
     <script>
+        function showRecoveryModal(phrase) {
+            document.getElementById('recovery-phrase-display').innerText = phrase;
+            document.getElementById('recovery-modal').style.display = 'flex';
+        }
+
+        function closeRecoveryModal() {
+            document.getElementById('recovery-modal').style.display = 'none';
+        }
+
         // Secret token mapping
         let SECRET_TOKEN = localStorage.getItem('kai_token');
         let authMode = 'login'; // 'login' | 'register' | 'forgot'
@@ -588,7 +607,7 @@
                         return;
                     }
                     if (authMode === 'register' && data.recovery_phrase) {
-                        alert("CRITICAL: Save this 12-word Recovery Phrase.\nIt is the ONLY way to reset your password if you lose it.\n\n" + data.recovery_phrase);
+                        showRecoveryModal(data.recovery_phrase);
                     }
                     localStorage.setItem('kai_token', data.token);
                     SECRET_TOKEN = data.token;

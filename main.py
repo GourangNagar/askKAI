@@ -485,7 +485,10 @@ async def serve_ui():
     index_file = static_dir / "index.html"
     if index_file.exists():
         with open(index_file, "r") as f:
-            return HTMLResponse(content=f.read())
+            return HTMLResponse(
+                content=f.read(), 
+                headers={"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache", "Expires": "0"}
+            )
     return HTMLResponse(content="<h1>Kai Web UI</h1><p>static/index.html not found.</p>")
 
 @app.get("/health")

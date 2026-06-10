@@ -14,5 +14,17 @@
     "password": "$2b$12$d8R0gF22G4k76IyqQ97HVOySsO9pX6KAzi3e7vO/5jz6aiTKR4s8e",
     "recovery_phrase": "$2b$12$eoQsXgnV5ROBQSSPTQGQmOHT06FCGTYGUGUq02h5zs7uZXTEHYaeu",
     "created_at": "2026-06-10T22:07:10.452235"
+  },
+  "testi@gmail.com": {
+    "email": "testi@gmail.com",
+    "password": "$2b$12$MwX2bQWOpXAr/fV9QfkmNu6NO2ReKsjSfvcPSI2yJ7hI0hYZSfLBu",
+    "recovery_phrase": "$2b$12$SusfG5G67FoTXTBF6.KKE.wSI7kQ2hA2EuP5Zd6AoJQpD03IVF2EG",
+    "created_at": "2026-06-10T22:11:45.372685"
+  },
+  "testivv@gmail.com": {
+    "email": "testivv@gmail.com",
+    "password": "$2b$12$7X5SdZdha9sOu3mMjNpRFuP7ofBv8JvZ5at6u.w7e4.RYIs6dt3gm",
+    "recovery_phrase": "$2b$12$YiDZqv8WoEtuTXgFiHXsK.7JSicXFSPX6ZsOx/XRwRWKqyhnRMsdq",
+    "created_at": "2026-06-10T22:14:35.769784"
   }
 }
