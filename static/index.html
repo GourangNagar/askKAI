@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Kai — Personal AI Assistant</title>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-glass: rgba(30, 41, 59, 0.7);
+            --border-glass: rgba(255, 255, 255, 0.1);
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #8b5cf6;
+            --danger: #ef4444;
+            --success: #10b981;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-dark);
+            background-image:
+                radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.15) 0px, transparent 50%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            line-height: 1.5;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 900px;
+            background: var(--bg-glass);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-glass);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            height: 85vh;
+        }
+
+        header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border-glass);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(15, 23, 42, 0.4);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .brand-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: white;
+        }
+
+        h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            letter-spacing: -0.025em;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 0.5rem;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 0.25rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-glass);
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-main);
+        }
+
+        .tab-btn.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        main {
+            flex: 1;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 2rem;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Forms & Inputs */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            color: var(--text-main);
+            padding: 0.75rem 1rem;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        button.primary-btn {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        button.primary-btn:hover {
+            opacity: 0.9;
+        }
+
+        button.primary-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* Memories List */
+        .memory-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            transition: transform 0.2s ease;
+        }
+
+        .memory-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .memory-content {
+            flex: 1;
+            padding-right: 1rem;
+        }
+
+        .memory-fact {
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .memory-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: flex;
+            gap: 1rem;
+        }
+
+        .delete-btn {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            padding: 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .delete-btn:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        /* Chat UI */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: calc(85vh - 85px);
+            /* Header offset */
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .message {
+            display: flex;
+            flex-direction: column;
+            max-width: 80%;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            align-items: flex-end;
+        }
+
+        .message.bot {
+            align-self: flex-start;
+            align-items: flex-start;
+        }
+
+        .message-bubble {
+            padding: 1rem 1.25rem;
+            border-radius: 18px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .message.user .message-bubble {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.bot .message-bubble {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border-glass);
+            border-bottom-left-radius: 4px;
+        }
+
+        .chat-input-area {
+            padding: 1.5rem;
+            background: rgba(15, 23, 42, 0.6);
+            border-top: 1px solid var(--border-glass);
+            display: flex;
+            gap: 1rem;
+        }
+
+        .chat-input-area input {
+            flex: 1;
+        }
+
+        /* Loader */
+        .loader {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--success);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 500;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.error {
+            background: var(--danger);
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 3rem 0;
+        }
+
+        /* Mobile Layout Optimizations */
+        @media (max-width: 768px) {
+            body {
+                padding: 0;
+            }
+
+            .app-container {
+                height: 100dvh;
+                border-radius: 0;
+                border: none;
+                box-shadow: none;
+                max-width: 100%;
+            }
+
+            header {
+                padding: 1rem;
+                padding-top: calc(1rem + env(safe-area-inset-top));
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch;
+            }
+
+            .brand {
+                justify-content: center;
+            }
+
+            .nav-tabs {
+                display: flex;
+                justify-content: space-between;
+            }
+
+            .tab-btn {
+                flex: 1;
+                text-align: center;
+                padding: 0.6rem;
+            }
+
+            .chat-container {
+                height: 100%; /* Will be contained by the flex layout of main */
+            }
+
+            main {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .tab-content {
+                padding: 1rem;
+                flex: 1;
+                overflow-y: auto;
+            }
+
+            .chat-messages {
+                padding: 1rem;
+            }
+
+            .chat-input-area {
+                padding: 1rem;
+                padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+                flex-wrap: wrap;
+            }
+
+            .message {
+                max-width: 92%;
+            }
+
+            .message-bubble {
+                padding: 0.8rem 1rem;
+                font-size: 1rem;
+            }
+
+            button.primary-btn {
+                width: 100%;
+                justify-content: center;
+                padding: 1rem;
+            }
+            
+            #send-btn {
+                width: auto;
+                padding: 0.75rem 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="app-container">
+        <header>
+            <div class="brand">
+                <div class="brand-icon">K</div>
+                <h1>Kai <span style="color:var(--text-muted); font-size:0.875rem; font-weight:normal;">Assistant</span>
+                </h1>
+            </div>
+            <div class="nav-tabs">
+                <button class="tab-btn active" onclick="switchTab('chat')">Chat</button>
+                <button class="tab-btn" onclick="switchTab('memory')">Memory</button>
+                <button class="tab-btn" onclick="switchTab('profile')">Profile</button>
+            </div>
+        </header>
+
+        <!-- CHAT TAB -->
+        <main id="chat-tab" class="tab-content active" style="padding:0;">
+            <div class="chat-container">
+                <div class="chat-messages" id="chat-messages">
+                    <div class="message bot">
+                        <div class="message-bubble">Hello! I'm Kai. You can tell me facts to remember or ask me
+                            questions about what I know.</div>
+                    </div>
+                </div>
+                <div class="chat-input-area">
+                    <input type="text" id="chat-input" placeholder="Message Kai..." onkeypress="handleKeyPress(event)">
+                    <button class="primary-btn" id="send-btn" onclick="sendMessage()">Send</button>
+                </div>
+            </div>
+        </main>
+
+        <!-- MEMORY TAB -->
+        <main id="memory-tab" class="tab-content">
+            <h2 style="margin-bottom: 1.5rem;">Saved Memories</h2>
+            <div id="memory-list">
+                <!-- Memories populated via JS -->
+                <div class="loader" style="border-top-color: var(--primary);"></div>
+            </div>
+        </main>
+
+        <!-- PROFILE TAB -->
+        <main id="profile-tab" class="tab-content">
+            <h2 style="margin-bottom: 1.5rem;">User Profile</h2>
+            <div class="form-group">
+                <label for="profile-name">Your Name</label>
+                <input type="text" id="profile-name" placeholder="E.g. Gourang">
+            </div>
+            <div class="form-group">
+                <label for="profile-instructions">Custom Instructions / Context</label>
+                <textarea id="profile-instructions"
+                    placeholder="E.g. I am a software engineer. I prefer very short, factual answers without conversational filler."></textarea>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin-top:0.5rem;">Kai reads this context before
+                    answering any of your questions.</p>
+            </div>
+            <button class="primary-btn" onclick="saveProfile()" id="save-profile-btn">Save Profile</button>
+        </main>
+    </div>
+
+    <div class="toast" id="toast">Saved successfully!</div>
+
+    <script>
+        // Secret token mapping (Normally we wouldn't expose webhook secret in JS, 
+        // but for personal single-user app it's fine, or we can prompt for it)
+        // We'll prompt the user if they try to use the chat without setting it in the code
+        let SECRET_TOKEN = localStorage.getItem('kai_token') || prompt("Please enter your WEBHOOK_SECRET:");
+        if (SECRET_TOKEN) localStorage.setItem('kai_token', SECRET_TOKEN);
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+            document.getElementById(`${tabId}-tab`).classList.add('active');
+            event.target.classList.add('active');
+
+            if (tabId === 'memory') loadMemories();
+            if (tabId === 'profile') loadProfile();
+        }
+
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = `toast show ${isError ? 'error' : ''}`;
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // --- Profile ---
+        async function loadProfile() {
+            if (!SECRET_TOKEN) return;
+            try {
+                const res = await fetch('/api/profile', {
+                    headers: { 'Authorization': `Bearer ${SECRET_TOKEN}` }
+                });
+                const data = await res.json();
+                document.getElementById('profile-name').value = data.name || '';
+                document.getElementById('profile-instructions').value = data.instructions || '';
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function saveProfile() {
+            if (!SECRET_TOKEN) return;
+            const btn = document.getElementById('save-profile-btn');
+            btn.innerHTML = '<div class="loader"></div> Saving...';
+
+            const name = document.getElementById('profile-name').value;
+            const instructions = document.getElementById('profile-instructions').value;
+
+            try {
+                await fetch('/api/profile', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SECRET_TOKEN}`
+                    },
+                    body: JSON.stringify({ name, instructions })
+                });
+                showToast("Profile saved!");
+            } catch (e) {
+                showToast("Error saving profile", true);
+            } finally {
+                btn.innerHTML = 'Save Profile';
+            }
+        }
+
+        // --- Memory ---
+        function formatDate(isoStr) {
+            if (!isoStr) return '';
+            const d = new Date(isoStr);
+            return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        async function loadMemories() {
+            if (!SECRET_TOKEN) return;
+            const list = document.getElementById('memory-list');
+            list.innerHTML = '<div style="text-align:center; padding: 2rem;"><div class="loader" style="border-top-color: var(--primary);"></div></div>';
+
+            try {
+                const res = await fetch('/api/memories', {
+                    headers: { 'Authorization': `Bearer ${SECRET_TOKEN}` }
+                });
+                const memories = await res.json();
+
+                if (memories.length === 0) {
+                    list.innerHTML = '<div class="empty-state">No memories saved yet. Tell Kai something to remember!</div>';
+                    return;
+                }
+
+                list.innerHTML = memories.map(m => `
+                    <div class="memory-card" id="mem-${m.id}">
+                        <div class="memory-content">
+                            <div class="memory-fact">${escapeHtml(m.fact)}</div>
+                            <div class="memory-meta">
+                                <span>${formatDate(m.timestamp)}</span>
+                                <span>Source: ${escapeHtml(m.source)}</span>
+                            </div>
+                        </div>
+                        <button class="delete-btn" onclick="deleteMemory('${m.id}')" title="Delete">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                        </button>
+                    </div>
+                `).join('');
+            } catch (e) {
+                list.innerHTML = '<div class="empty-state" style="color:var(--danger)">Error loading memories.</div>';
+            }
+        }
+
+        async function deleteMemory(id) {
+            if (!confirm("Delete this memory forever?")) return;
+            try {
+                await fetch(`/api/memories/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${SECRET_TOKEN}` }
+                });
+                document.getElementById(`mem-${id}`).remove();
+                showToast("Memory deleted");
+            } catch (e) {
+                showToast("Failed to delete", true);
+            }
+        }
+
+        // --- Chat ---
+        function escapeHtml(unsafe) {
+            return (unsafe || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        function appendMessage(text, isUser = false) {
+            const chat = document.getElementById('chat-messages');
+            const msg = document.createElement('div');
+            msg.className = `message ${isUser ? 'user' : 'bot'}`;
+            msg.innerHTML = `<div class="message-bubble">${escapeHtml(text)}</div>`;
+            chat.appendChild(msg);
+            chat.scrollTop = chat.scrollHeight;
+            return msg;
+        }
+
+        function handleKeyPress(e) {
+            if (e.key === 'Enter') sendMessage();
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            if (!SECRET_TOKEN) {
+                SECRET_TOKEN = prompt("Please enter your WEBHOOK_SECRET:");
+                if (SECRET_TOKEN) localStorage.setItem('kai_token', SECRET_TOKEN);
+                else return;
+            }
+
+            input.value = '';
+            appendMessage(text, true);
+
+            const btn = document.getElementById('send-btn');
+            btn.innerHTML = '<div class="loader"></div>';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/webhook', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SECRET_TOKEN}`
+                    },
+                    body: JSON.stringify({ text, source: 'web' })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    appendMessage(data.message, false);
+                } else {
+                    appendMessage(`Error: ${data.message || data.error || 'Unknown error'}`, false);
+                }
+            } catch (e) {
+                appendMessage(`Connection error.`, false);
+            } finally {
+                btn.innerHTML = 'Send';
+                btn.disabled = false;
+                input.focus();
+            }
+        }
+
+        // Initialize
+        loadProfile();
+    </script>
+</body>
+
+</html>
