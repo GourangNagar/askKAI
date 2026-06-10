@@ -427,7 +427,7 @@ async def webhook(
             doc_id     = save_to_memory(clean_fact, source, text, user_id)
             return WebhookResponse(
                 action="saved",
-                message=f"Got it! I've saved that to memory: \"{clean_fact}\"",
+                message="Got it.",
                 stored_fact=clean_fact,
                 doc_id=doc_id,
             )
