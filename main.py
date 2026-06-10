@@ -351,7 +351,7 @@ async def health():
     return {
         "status": "ok",
         "assistant": "Kai",
-        "llm": GEMINI_MODEL,
+        "llm": OPENAI_MODEL,
         "memory_docs": len(load_memory_from_disk()),
         "timestamp": datetime.utcnow().isoformat(),
     }
