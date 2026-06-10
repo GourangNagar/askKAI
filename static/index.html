@@ -171,6 +171,8 @@
         }
 
         input[type="text"],
+        input[type="email"],
+        input[type="password"],
         textarea {
             width: 100%;
             background: #000000;
@@ -184,6 +186,8 @@
         }
 
         input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus,
         textarea:focus {
             outline: none;
             border-color: var(--primary);
@@ -424,24 +428,28 @@
 
 <body>
     <div class="login-container" id="login-screen">
-        <div class="brand-icon" style="margin: 0 auto 2rem auto; width: 80px; height: 64px; font-size: 2rem;">KAI</div>
-        <h1 style="text-align: center; margin-bottom: 2rem;">KAI</h1>
-        
+        <div class="brand-icon" style="margin: 0 auto 2rem auto; width: 140px; height: 64px; font-size: 2rem;">askKAI
+        </div>
+        <h1 style="text-align: center; margin-bottom: 2rem;">"海" means "Ocean" & its pronounced "kai"</h1>
+
         <form id="auth-form" onsubmit="handleAuth(event)">
             <input type="text" id="auth-name" placeholder="YOUR NAME" style="margin-bottom: 1rem; display: none;">
             <input type="email" id="auth-email" placeholder="USER EMAIL" required style="margin-bottom: 1rem;">
-            <input type="text" id="auth-recovery" placeholder="12-WORD RECOVERY PHRASE" style="margin-bottom: 1rem; display: none;">
+            <input type="text" id="auth-recovery" placeholder="12-WORD RECOVERY PHRASE"
+                style="margin-bottom: 1rem; display: none;">
             <input type="password" id="auth-password" placeholder="PASSWORD" required style="margin-bottom: 1rem;">
-            
+
             <button type="submit" class="primary-btn" id="auth-submit-btn" style="width: 100%; margin-bottom: 1rem;">
                 AUTHENTICATE
             </button>
         </form>
-        
-        <p style="text-align: center; color: var(--text-muted); cursor: pointer; text-decoration: underline;" onclick="setAuthMode('register')" id="auth-toggle-1">
+
+        <p style="text-align: center; color: var(--text-muted); cursor: pointer; text-decoration: underline;"
+            onclick="setAuthMode('register')" id="auth-toggle-1">
             No account? Register here.
         </p>
-        <p style="text-align: center; color: var(--text-muted); cursor: pointer; text-decoration: underline; margin-top: 1rem;" onclick="setAuthMode('forgot')" id="auth-toggle-2">
+        <p style="text-align: center; color: var(--text-muted); cursor: pointer; text-decoration: underline; margin-top: 1rem;"
+            onclick="setAuthMode('forgot')" id="auth-toggle-2">
             Forgot Password?
         </p>
         <p id="auth-error" style="color: var(--danger); text-align: center; margin-top: 1rem; display: none;"></p>
@@ -450,7 +458,7 @@
     <div class="app-container" id="app-screen" style="display: none;">
         <header>
             <div class="brand">
-                <div class="brand-icon">KAI</div>
+                <div class="brand-icon">海</div>
                 <h1><span id="header-user-name">Kai</span></h1>
             </div>
             <div class="nav-tabs">
@@ -500,8 +508,10 @@
                     answering any of your questions.</p>
             </div>
             <div style="display: flex; gap: 1rem;">
-                <button class="primary-btn" onclick="saveProfile()" id="save-profile-btn" style="flex: 1;">Save Profile</button>
-                <button class="primary-btn" onclick="logout()" style="flex: 1; background: transparent; border-color: var(--danger); color: var(--danger);">Logout</button>
+                <button class="primary-btn" onclick="saveProfile()" id="save-profile-btn" style="flex: 1;">Save
+                    Profile</button>
+                <button class="primary-btn" onclick="logout()"
+                    style="flex: 1; background: transparent; border-color: var(--danger); color: var(--danger);">Logout</button>
             </div>
         </main>
     </div>
@@ -509,11 +519,16 @@
     <div class="toast" id="toast">Saved successfully!</div>
 
     <!-- Recovery Phrase Modal -->
-    <div id="recovery-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
-        <div style="background:#050505; border:1px solid var(--border-glass); border-top:4px solid var(--primary); padding:2rem; max-width:400px; width:90%; text-align:center; box-shadow: 0 0 20px rgba(0, 255, 0, 0.15);">
+    <div id="recovery-modal"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
+        <div
+            style="background:#050505; border:1px solid var(--border-glass); border-top:4px solid var(--primary); padding:2rem; max-width:400px; width:90%; text-align:center; box-shadow: 0 0 20px rgba(0, 255, 0, 0.15);">
             <h2 style="color:var(--danger); margin-bottom:1rem;">CRITICAL WARNING</h2>
-            <p style="margin-bottom:1rem; font-size:0.875rem; color:var(--text-muted);">Please save this 12-word Recovery Phrase somewhere safe. It is the ONLY way to reset your password if you lose it.</p>
-            <div id="recovery-phrase-display" style="background:#000; border:1px solid var(--primary); padding:1rem; margin-bottom:1.5rem; color:var(--primary); font-family:monospace; font-size:1.1rem; line-height:1.5; letter-spacing:1px;"></div>
+            <p style="margin-bottom:1rem; font-size:0.875rem; color:var(--text-muted);">Please save this 12-word
+                Recovery Phrase somewhere safe. It is the ONLY way to reset your password if you lose it.</p>
+            <div id="recovery-phrase-display"
+                style="background:#000; border:1px solid var(--primary); padding:1rem; margin-bottom:1.5rem; color:var(--primary); font-family:monospace; font-size:1.1rem; line-height:1.5; letter-spacing:1px;">
+            </div>
             <button class="primary-btn" style="width:100%;" onclick="closeRecoveryModal()">I HAVE SAVED IT</button>
         </div>
     </div>
@@ -535,7 +550,7 @@
         function setAuthMode(mode) {
             authMode = mode;
             document.getElementById('auth-error').style.display = 'none';
-            
+
             const nameEl = document.getElementById('auth-name');
             const recEl = document.getElementById('auth-recovery');
             const passEl = document.getElementById('auth-password');
@@ -577,7 +592,7 @@
             const recovery_phrase = document.getElementById('auth-recovery').value;
             const password = document.getElementById('auth-password').value;
             const errorEl = document.getElementById('auth-error');
-            
+
             let endpoint = '/auth/login';
             let payload = { email, password };
 
@@ -588,7 +603,7 @@
                 endpoint = '/auth/reset-password';
                 payload.recovery_phrase = recovery_phrase;
             }
-            
+
             try {
                 const res = await fetch(endpoint, {
                     method: 'POST',
@@ -596,7 +611,7 @@
                     body: JSON.stringify(payload)
                 });
                 const data = await res.json();
-                
+
                 if (!res.ok) {
                     errorEl.innerText = data.detail || 'Authentication failed.';
                     errorEl.style.display = 'block';
