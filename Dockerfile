@@ -63,9 +63,9 @@ COPY static ./static
 # Drop privileges
 USER kai
 
-# Override at runtime:  docker run -e GOOGLE_API_KEY=... -e WEBHOOK_SECRET=...
-ENV GEMINI_MODEL=gemini-2.5-flash \
-    EMBED_MODEL=models/gemini-embedding-001
+# Override at runtime:  docker run -e OPENAI_API_KEY=... -e WEBHOOK_SECRET=...
+ENV OPENAI_MODEL=gpt-4o-mini \
+    EMBED_MODEL=text-embedding-3-small
 
 # Healthcheck using the /health endpoint
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
