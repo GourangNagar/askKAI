@@ -423,6 +423,12 @@
             padding: 3rem 0;
             font-style: italic;
         }
+
+        @media (max-width: 600px) {
+            .profile-actions {
+                flex-direction: column !important;
+            }
+        }
     </style>
 </head>
 
@@ -507,7 +513,7 @@
                 <p style="font-size:0.75rem; color:var(--text-muted); margin-top:0.5rem;">Kai reads this context before
                     answering any of your questions.</p>
             </div>
-            <div style="display: flex; gap: 1rem;">
+            <div class="profile-actions" style="display: flex; gap: 1rem;">
                 <button class="primary-btn" onclick="saveProfile()" id="save-profile-btn" style="flex: 1;">Save
                     Profile</button>
                 <button class="primary-btn" onclick="logout()"
