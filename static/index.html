@@ -428,7 +428,9 @@
         <h1 style="text-align: center; margin-bottom: 2rem;">KAI SYSTEM</h1>
         
         <form id="auth-form" onsubmit="handleAuth(event)">
+            <input type="text" id="auth-name" placeholder="YOUR NAME" style="margin-bottom: 1rem; display: none;">
             <input type="email" id="auth-email" placeholder="USER EMAIL" required style="margin-bottom: 1rem;">
+            <input type="text" id="auth-recovery" placeholder="12-WORD RECOVERY PHRASE" style="margin-bottom: 1rem; display: none;">
             <input type="password" id="auth-password" placeholder="PASSWORD" required style="margin-bottom: 1rem;">
             
             <button type="submit" class="primary-btn" id="auth-submit-btn" style="width: 100%; margin-bottom: 1rem;">
@@ -436,8 +438,11 @@
             </button>
         </form>
         
-        <p style="text-align: center; color: var(--text-muted); cursor: pointer; text-decoration: underline;" onclick="toggleAuthMode()" id="auth-toggle-text">
+        <p style="text-align: center; color: var(--text-muted); cursor: pointer; text-decoration: underline;" onclick="setAuthMode('register')" id="auth-toggle-1">
             No account? Register here.
+        </p>
+        <p style="text-align: center; color: var(--text-muted); cursor: pointer; text-decoration: underline; margin-top: 1rem;" onclick="setAuthMode('forgot')" id="auth-toggle-2">
+            Forgot Password?
         </p>
         <p id="auth-error" style="color: var(--danger); text-align: center; margin-top: 1rem; display: none;"></p>
     </div>
@@ -446,8 +451,7 @@
         <header>
             <div class="brand">
                 <div class="brand-icon">K</div>
-                <h1>Kai <span style="color:var(--text-muted); font-size:0.875rem; font-weight:normal;">Assistant</span>
-                </h1>
+                <h1><span id="header-user-name">Kai</span> <span style="color:var(--text-muted); font-size:0.875rem; font-weight:normal;">System</span></h1>
             </div>
             <div class="nav-tabs">
                 <button class="tab-btn active" onclick="switchTab('chat')">Chat</button>
@@ -495,7 +499,10 @@
                 <p style="font-size:0.75rem; color:var(--text-muted); margin-top:0.5rem;">Kai reads this context before
                     answering any of your questions.</p>
             </div>
-            <button class="primary-btn" onclick="saveProfile()" id="save-profile-btn">Save Profile</button>
+            <div style="display: flex; gap: 1rem;">
+                <button class="primary-btn" onclick="saveProfile()" id="save-profile-btn" style="flex: 1;">Save Profile</button>
+                <button class="primary-btn" onclick="logout()" style="flex: 1; background: transparent; border-color: var(--danger); color: var(--danger);">Logout</button>
+            </div>
         </main>
     </div>
 
@@ -504,35 +511,85 @@
     <script>
         // Secret token mapping
         let SECRET_TOKEN = localStorage.getItem('kai_token');
-        let isLoginMode = true;
+        let authMode = 'login'; // 'login' | 'register' | 'forgot'
 
-        function toggleAuthMode() {
-            isLoginMode = !isLoginMode;
-            document.getElementById('auth-submit-btn').innerText = isLoginMode ? 'AUTHENTICATE' : 'INITIALIZE NEW USER';
-            document.getElementById('auth-toggle-text').innerText = isLoginMode ? 'No account? Register here.' : 'Already have access? Login here.';
+        function setAuthMode(mode) {
+            authMode = mode;
             document.getElementById('auth-error').style.display = 'none';
+            
+            const nameEl = document.getElementById('auth-name');
+            const recEl = document.getElementById('auth-recovery');
+            const passEl = document.getElementById('auth-password');
+            const btn = document.getElementById('auth-submit-btn');
+            const toggle1 = document.getElementById('auth-toggle-1');
+            const toggle2 = document.getElementById('auth-toggle-2');
+
+            if (mode === 'login') {
+                nameEl.style.display = 'none'; nameEl.required = false;
+                recEl.style.display = 'none'; recEl.required = false;
+                passEl.placeholder = 'PASSWORD';
+                btn.innerText = 'AUTHENTICATE';
+                toggle1.innerText = 'No account? Register here.';
+                toggle1.onclick = () => setAuthMode('register');
+                toggle2.style.display = 'block';
+            } else if (mode === 'register') {
+                nameEl.style.display = 'block'; nameEl.required = true;
+                recEl.style.display = 'none'; recEl.required = false;
+                passEl.placeholder = 'CREATE PASSWORD';
+                btn.innerText = 'INITIALIZE NEW USER';
+                toggle1.innerText = 'Already have access? Login here.';
+                toggle1.onclick = () => setAuthMode('login');
+                toggle2.style.display = 'none';
+            } else if (mode === 'forgot') {
+                nameEl.style.display = 'none'; nameEl.required = false;
+                recEl.style.display = 'block'; recEl.required = true;
+                passEl.placeholder = 'NEW PASSWORD';
+                btn.innerText = 'RESET PASSWORD';
+                toggle1.innerText = 'Back to Login';
+                toggle1.onclick = () => setAuthMode('login');
+                toggle2.style.display = 'none';
+            }
         }
 
         async function handleAuth(e) {
             e.preventDefault();
+            const name = document.getElementById('auth-name').value;
             const email = document.getElementById('auth-email').value;
+            const recovery_phrase = document.getElementById('auth-recovery').value;
             const password = document.getElementById('auth-password').value;
-            const endpoint = isLoginMode ? '/auth/login' : '/auth/register';
             const errorEl = document.getElementById('auth-error');
+            
+            let endpoint = '/auth/login';
+            let payload = { email, password };
+
+            if (authMode === 'register') {
+                endpoint = '/auth/register';
+                payload.name = name;
+            } else if (authMode === 'forgot') {
+                endpoint = '/auth/reset-password';
+                payload.recovery_phrase = recovery_phrase;
+            }
             
             try {
                 const res = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
+                    body: JSON.stringify(payload)
                 });
-                
                 const data = await res.json();
                 
                 if (!res.ok) {
                     errorEl.innerText = data.detail || 'Authentication failed.';
                     errorEl.style.display = 'block';
                 } else {
+                    if (authMode === 'forgot') {
+                        alert(data.message);
+                        setAuthMode('login');
+                        return;
+                    }
+                    if (authMode === 'register' && data.recovery_phrase) {
+                        alert("CRITICAL: Save this 12-word Recovery Phrase.\nIt is the ONLY way to reset your password if you lose it.\n\n" + data.recovery_phrase);
+                    }
                     localStorage.setItem('kai_token', data.token);
                     SECRET_TOKEN = data.token;
                     document.getElementById('login-screen').style.display = 'none';
@@ -588,6 +645,7 @@
                 });
                 if (res.status === 401) return logout();
                 const data = await res.json();
+                document.getElementById('header-user-name').innerText = data.name || 'Kai';
                 document.getElementById('profile-name').value = data.name || '';
                 document.getElementById('profile-instructions').value = data.instructions || '';
             } catch (e) {

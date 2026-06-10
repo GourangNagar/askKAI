@@ -10,6 +10,8 @@ import logging
 from pathlib import Path
 from datetime import datetime
 from typing import Optional, List
+import secrets
+import random
 
 import jwt
 from fastapi import FastAPI, Request, HTTPException, Depends
@@ -73,9 +75,13 @@ app.add_middleware(
 
 # ── Security & Auth (Local Email/Password) ──────────────────────────────────
 
+WORDLIST = ["apple", "ocean", "zebra", "moon", "star", "river", "mountain", "cloud", "sun", "tree", "bird", "fish", "bear", "wolf", "fox", "lion", "tiger", "hawk", "eagle", "snake", "lizard", "frog", "toad", "whale", "shark", "dolphin", "turtle", "crab", "lobster", "octopus", "squid", "jellyfish", "coral", "reef", "sand", "shell", "wave", "tide", "surf", "breeze", "wind", "storm", "rain", "snow", "ice", "frost", "fire", "flame", "spark", "ash", "smoke", "coal", "rock", "stone", "pebble", "dust", "dirt", "soil", "mud", "clay", "sand", "glass", "metal", "iron", "steel", "gold", "silver", "copper", "brass", "bronze", "wood", "leaf", "branch", "root", "bark", "seed", "flower", "fruit", "berry", "nut", "cone", "mushroom", "fungus", "moss", "fern", "grass", "weed", "vine", "bush", "shrub", "plant", "herb", "spice", "salt", "pepper", "sugar", "honey"]
+
 class AuthPayload(BaseModel):
     email: str
-    password: str
+    password: Optional[str] = None
+    name: Optional[str] = None
+    recovery_phrase: Optional[str] = None
 
 def load_users():
     with open(USERS_FILE, "r") as f:
@@ -97,12 +103,27 @@ async def register(payload: AuthPayload):
         raise HTTPException(status_code=400, detail="Email already registered.")
         
     hashed_password = bcrypt.hashpw(payload.password.encode(), bcrypt.gensalt()).decode()
+    
+    # Generate 12-word recovery phrase
+    phrase_words = [random.choice(WORDLIST) for _ in range(12)]
+    recovery_phrase = " ".join(phrase_words)
+    hashed_phrase = bcrypt.hashpw(recovery_phrase.encode(), bcrypt.gensalt()).decode()
+    
     users[email] = {
         "email": email,
         "password": hashed_password,
+        "recovery_phrase": hashed_phrase,
         "created_at": datetime.utcnow().isoformat()
     }
     save_users(users)
+    
+    # Save the name to profile.json directly
+    if payload.name:
+        pf = get_profile_file(email)
+        # Create user dir if it doesn't exist
+        get_user_dir(email)
+        with open(pf, "w") as f:
+            json.dump({"name": payload.name, "instructions": "I prefer concise and direct answers."}, f, indent=2)
     
     # Generate JWT
     jwt_token = jwt.encode({
@@ -110,13 +131,16 @@ async def register(payload: AuthPayload):
         "exp": datetime.utcnow().timestamp() + (30 * 24 * 3600)
     }, JWT_SECRET, algorithm="HS256")
     
-    return {"token": jwt_token}
+    return {"token": jwt_token, "recovery_phrase": recovery_phrase}
 
 @app.post("/auth/login")
 async def login(payload: AuthPayload):
     users = load_users()
     email = payload.email.lower().strip()
     
+    if not payload.password:
+        raise HTTPException(status_code=400, detail="Password required.")
+
     user = users.get(email)
     if not user or not bcrypt.checkpw(payload.password.encode(), user["password"].encode()):
         raise HTTPException(status_code=401, detail="Invalid email or password.")
@@ -128,6 +152,28 @@ async def login(payload: AuthPayload):
     }, JWT_SECRET, algorithm="HS256")
     
     return {"token": jwt_token}
+
+@app.post("/auth/reset-password")
+async def reset_password(payload: AuthPayload):
+    users = load_users()
+    email = payload.email.lower().strip()
+    
+    if not email or not payload.recovery_phrase or not payload.password:
+        raise HTTPException(status_code=400, detail="Email, recovery phrase, and new password are required.")
+        
+    user = users.get(email)
+    if not user or "recovery_phrase" not in user:
+        raise HTTPException(status_code=400, detail="Invalid email or recovery phrase.")
+        
+    if not bcrypt.checkpw(payload.recovery_phrase.strip().encode(), user["recovery_phrase"].encode()):
+        raise HTTPException(status_code=401, detail="Invalid recovery phrase.")
+        
+    # Update password
+    hashed_password = bcrypt.hashpw(payload.password.encode(), bcrypt.gensalt()).decode()
+    users[email]["password"] = hashed_password
+    save_users(users)
+    
+    return {"status": "success", "message": "Password updated successfully."}
 
 bearer_scheme = HTTPBearer()
 
