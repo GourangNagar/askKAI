@@ -426,11 +426,20 @@
     <div class="login-container" id="login-screen">
         <div class="brand-icon" style="margin: 0 auto 2rem auto; width: 64px; height: 64px; font-size: 2rem;">K</div>
         <h1 style="text-align: center; margin-bottom: 2rem;">KAI SYSTEM</h1>
-        <p style="text-align: center; color: var(--text-muted); margin-bottom: 2rem;">UNAUTHORIZED ACCESS. PLEASE AUTHENTICATE.</p>
-        <button class="primary-btn" onclick="window.location.href='/auth/login'" style="width: 100%;">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
-            SIGN IN WITH GOOGLE
-        </button>
+        
+        <form id="auth-form" onsubmit="handleAuth(event)">
+            <input type="email" id="auth-email" placeholder="USER EMAIL" required style="margin-bottom: 1rem;">
+            <input type="password" id="auth-password" placeholder="PASSWORD" required style="margin-bottom: 1rem;">
+            
+            <button type="submit" class="primary-btn" id="auth-submit-btn" style="width: 100%; margin-bottom: 1rem;">
+                AUTHENTICATE
+            </button>
+        </form>
+        
+        <p style="text-align: center; color: var(--text-muted); cursor: pointer; text-decoration: underline;" onclick="toggleAuthMode()" id="auth-toggle-text">
+            No account? Register here.
+        </p>
+        <p id="auth-error" style="color: var(--danger); text-align: center; margin-top: 1rem; display: none;"></p>
     </div>
 
     <div class="app-container" id="app-screen" style="display: none;">
@@ -495,15 +504,44 @@
     <script>
         // Secret token mapping
         let SECRET_TOKEN = localStorage.getItem('kai_token');
-        
-        // Check for token in URL hash
-        const hash = window.location.hash;
-        if (hash.includes('token=')) {
-            const tokenParams = new URLSearchParams(hash.substring(1));
-            SECRET_TOKEN = tokenParams.get('token');
-            if (SECRET_TOKEN) {
-                localStorage.setItem('kai_token', SECRET_TOKEN);
-                window.history.replaceState(null, null, ' '); // clear hash
+        let isLoginMode = true;
+
+        function toggleAuthMode() {
+            isLoginMode = !isLoginMode;
+            document.getElementById('auth-submit-btn').innerText = isLoginMode ? 'AUTHENTICATE' : 'INITIALIZE NEW USER';
+            document.getElementById('auth-toggle-text').innerText = isLoginMode ? 'No account? Register here.' : 'Already have access? Login here.';
+            document.getElementById('auth-error').style.display = 'none';
+        }
+
+        async function handleAuth(e) {
+            e.preventDefault();
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            const endpoint = isLoginMode ? '/auth/login' : '/auth/register';
+            const errorEl = document.getElementById('auth-error');
+            
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await res.json();
+                
+                if (!res.ok) {
+                    errorEl.innerText = data.detail || 'Authentication failed.';
+                    errorEl.style.display = 'block';
+                } else {
+                    localStorage.setItem('kai_token', data.token);
+                    SECRET_TOKEN = data.token;
+                    document.getElementById('login-screen').style.display = 'none';
+                    document.getElementById('app-screen').style.display = 'flex';
+                    loadProfile();
+                }
+            } catch (err) {
+                errorEl.innerText = 'Network error.';
+                errorEl.style.display = 'block';
             }
         }
 

@@ -18,8 +18,7 @@ from fastapi.responses import JSONResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.middleware.sessions import SessionMiddleware
-from authlib.integrations.starlette_client import OAuth, OAuthError
+import bcrypt
 
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_chroma import Chroma
@@ -47,22 +46,22 @@ OPENAI_MODEL     = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 EMBED_MODEL      = os.getenv("EMBED_MODEL", "text-embedding-3-small")
 
 # Multi-tenant Auth config
-GOOGLE_CLIENT_ID     = os.getenv("GOOGLE_CLIENT_ID")
-GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 JWT_SECRET           = os.getenv("JWT_SECRET", "super-secret-default-key-change-me")
-SESSION_SECRET       = os.getenv("SESSION_SECRET", "super-secret-session-key-change-me")
 
 DATA_DIR = Path("data")
 DATA_DIR.mkdir(exist_ok=True)
+USERS_FILE = DATA_DIR / "users.json"
+
+if not USERS_FILE.exists():
+    with open(USERS_FILE, "w") as f:
+        json.dump({}, f)
 
 # ── FastAPI App ───────────────────────────────────────────────────────────────
 app = FastAPI(
     title="Kai — Personal AI Assistant",
     description="Secure webhook with Multi-Tenant Agentic RAG and Web UI",
-    version="3.0.0",
+    version="3.1.0",
 )
-
-app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET)
 
 app.add_middleware(
     CORSMiddleware,
@@ -72,54 +71,63 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── Security & Auth (Google OAuth) ────────────────────────────────────────────
+# ── Security & Auth (Local Email/Password) ──────────────────────────────────
 
-# Set up Authlib OAuth
-oauth = OAuth()
-oauth.register(
-    name='google',
-    client_id=GOOGLE_CLIENT_ID,
-    client_secret=GOOGLE_CLIENT_SECRET,
-    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
-    client_kwargs={
-        'scope': 'openid email profile'
+class AuthPayload(BaseModel):
+    email: str
+    password: str
+
+def load_users():
+    with open(USERS_FILE, "r") as f:
+        return json.load(f)
+
+def save_users(users):
+    with open(USERS_FILE, "w") as f:
+        json.dump(users, f, indent=2)
+
+@app.post("/auth/register")
+async def register(payload: AuthPayload):
+    users = load_users()
+    email = payload.email.lower().strip()
+    
+    if not email or not payload.password:
+        raise HTTPException(status_code=400, detail="Email and password required.")
+        
+    if email in users:
+        raise HTTPException(status_code=400, detail="Email already registered.")
+        
+    hashed_password = bcrypt.hashpw(payload.password.encode(), bcrypt.gensalt()).decode()
+    users[email] = {
+        "email": email,
+        "password": hashed_password,
+        "created_at": datetime.utcnow().isoformat()
     }
-)
-
-@app.get("/auth/login")
-async def login(request: Request):
-    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
-        return JSONResponse(status_code=500, content={"error": "Google OAuth is not configured on the server."})
+    save_users(users)
     
-    # Generate the redirect URI dynamically
-    redirect_uri = request.url_for('auth_callback')
+    # Generate JWT
+    jwt_token = jwt.encode({
+        "sub": email, 
+        "exp": datetime.utcnow().timestamp() + (30 * 24 * 3600)
+    }, JWT_SECRET, algorithm="HS256")
     
-    # Depending on proxy setup, we might need to enforce HTTPS scheme
-    if "https" in str(request.url):
-        redirect_uri = str(redirect_uri).replace("http://", "https://")
-        
-    return await oauth.google.authorize_redirect(request, str(redirect_uri))
+    return {"token": jwt_token}
 
-@app.get("/auth/callback")
-async def auth_callback(request: Request):
-    try:
-        token = await oauth.google.authorize_access_token(request)
-        user = token.get('userinfo')
-        if not user:
-            raise HTTPException(status_code=400, detail="Could not fetch user info")
+@app.post("/auth/login")
+async def login(payload: AuthPayload):
+    users = load_users()
+    email = payload.email.lower().strip()
+    
+    user = users.get(email)
+    if not user or not bcrypt.checkpw(payload.password.encode(), user["password"].encode()):
+        raise HTTPException(status_code=401, detail="Invalid email or password.")
         
-        # Issue a JWT token
-        jwt_token = jwt.encode({
-            "sub": user['email'], 
-            "name": user.get('name', ''),
-            "exp": datetime.utcnow().timestamp() + (30 * 24 * 3600) # 30 days
-        }, JWT_SECRET, algorithm="HS256")
-        
-        # We redirect back to the home page, passing the token in the URL hash fragment
-        # The frontend will extract it and put it in localStorage
-        return RedirectResponse(url=f"/#token={jwt_token}")
-    except OAuthError as error:
-        return HTMLResponse(f'<h1>Error during OAuth</h1><p>{error.error}</p>')
+    # Generate JWT
+    jwt_token = jwt.encode({
+        "sub": email, 
+        "exp": datetime.utcnow().timestamp() + (30 * 24 * 3600)
+    }, JWT_SECRET, algorithm="HS256")
+    
+    return {"token": jwt_token}
 
 bearer_scheme = HTTPBearer()
 
