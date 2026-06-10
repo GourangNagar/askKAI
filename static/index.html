@@ -513,6 +513,15 @@
                 <p style="font-size:0.75rem; color:var(--text-muted); margin-top:0.5rem;">Kai reads this context before
                     answering any of your questions.</p>
             </div>
+            
+            <div class="form-group" style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-glass);">
+                <label for="profile-token" style="color: var(--primary);">Your Personal API Token (For iOS Shortcuts)</label>
+                <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                    <input type="text" id="profile-token" readonly style="flex: 1; font-size: 0.8rem; background: #000;">
+                    <button class="primary-btn" onclick="copyToken()" style="padding: 0 1rem; font-size: 0.8rem;">Copy</button>
+                </div>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin-top:0.5rem;">Use this long token as your Authorization Bearer key in your Apple Shortcut. Do not share this!</p>
+            </div>
             <div class="profile-actions" style="display: flex; gap: 1rem;">
                 <button class="primary-btn" onclick="saveProfile()" id="save-profile-btn" style="flex: 1;">Save
                     Profile</button>
@@ -677,6 +686,18 @@
             document.getElementById('app-screen').style.display = 'none';
         }
 
+        function copyToken() {
+            const tokenEl = document.getElementById('profile-token');
+            tokenEl.select();
+            tokenEl.setSelectionRange(0, 99999); // For mobile devices
+            navigator.clipboard.writeText(tokenEl.value).then(() => {
+                const toast = document.getElementById('toast');
+                toast.innerText = "Token copied to clipboard!";
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 3000);
+            });
+        }
+
         async function loadProfile() {
             if (!SECRET_TOKEN) return;
             try {
@@ -688,6 +709,7 @@
                 document.getElementById('header-user-name').innerText = data.name || 'Kai';
                 document.getElementById('profile-name').value = data.name || '';
                 document.getElementById('profile-instructions').value = data.instructions || '';
+                document.getElementById('profile-token').value = SECRET_TOKEN || '';
             } catch (e) {
                 console.error(e);
             }
