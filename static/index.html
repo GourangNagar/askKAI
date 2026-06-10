@@ -573,12 +573,20 @@
         }
 
         // --- Profile ---
+        function logout() {
+            localStorage.removeItem('kai_token');
+            SECRET_TOKEN = null;
+            document.getElementById('login-screen').style.display = 'block';
+            document.getElementById('app-screen').style.display = 'none';
+        }
+
         async function loadProfile() {
             if (!SECRET_TOKEN) return;
             try {
                 const res = await fetch('/api/profile', {
                     headers: { 'Authorization': `Bearer ${SECRET_TOKEN}` }
                 });
+                if (res.status === 401) return logout();
                 const data = await res.json();
                 document.getElementById('profile-name').value = data.name || '';
                 document.getElementById('profile-instructions').value = data.instructions || '';
@@ -596,7 +604,7 @@
             const instructions = document.getElementById('profile-instructions').value;
 
             try {
-                await fetch('/api/profile', {
+                const res = await fetch('/api/profile', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -604,6 +612,7 @@
                     },
                     body: JSON.stringify({ name, instructions })
                 });
+                if (res.status === 401) return logout();
                 showToast("Profile saved!");
             } catch (e) {
                 showToast("Error saving profile", true);
@@ -628,6 +637,7 @@
                 const res = await fetch('/api/memories', {
                     headers: { 'Authorization': `Bearer ${SECRET_TOKEN}` }
                 });
+                if (res.status === 401) return logout();
                 const memories = await res.json();
 
                 if (memories.length === 0) {
@@ -657,10 +667,11 @@
         async function deleteMemory(id) {
             if (!confirm("Delete this memory forever?")) return;
             try {
-                await fetch(`/api/memories/${id}`, {
+                const res = await fetch(`/api/memories/${id}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${SECRET_TOKEN}` }
                 });
+                if (res.status === 401) return logout();
                 document.getElementById(`mem-${id}`).remove();
                 showToast("Memory deleted");
             } catch (e) {
@@ -692,11 +703,7 @@
             const text = input.value.trim();
             if (!text) return;
 
-            if (!SECRET_TOKEN) {
-                SECRET_TOKEN = prompt("Please enter your WEBHOOK_SECRET:");
-                if (SECRET_TOKEN) localStorage.setItem('kai_token', SECRET_TOKEN);
-                else return;
-            }
+            if (!SECRET_TOKEN) return logout();
 
             input.value = '';
             appendMessage(text, true);
@@ -714,6 +721,8 @@
                     },
                     body: JSON.stringify({ text, source: 'web' })
                 });
+
+                if (res.status === 401) return logout();
 
                 const data = await res.json();
                 if (res.ok) {
