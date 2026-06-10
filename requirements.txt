@@ -8,3 +8,8 @@ chromadb
 python-dotenv
 pydantic
 
+
+authlib
+pyjwt
+httpx
+itsdangerous

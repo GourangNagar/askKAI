@@ -3,7 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Kai — Personal AI Assistant</title>
@@ -57,7 +58,7 @@
             justify-content: space-between;
             align-items: center;
             background: #0a0a0a;
-            box-shadow: 0 0 15px rgba(0,255,0,0.1);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.1);
         }
 
         .brand {
@@ -71,7 +72,7 @@
             height: 32px;
             background: #000000;
             border: 1px solid var(--primary);
-            box-shadow: 0 0 8px rgba(0,255,0,0.5);
+            box-shadow: 0 0 8px rgba(0, 255, 0, 0.5);
             border-radius: 4px;
             display: flex;
             justify-content: center;
@@ -86,7 +87,7 @@
             font-weight: bold;
             letter-spacing: 1px;
             text-transform: uppercase;
-            text-shadow: 0 0 5px rgba(0,255,0,0.5);
+            text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
         }
 
         .nav-tabs {
@@ -113,13 +114,13 @@
 
         .tab-btn:hover {
             color: var(--primary);
-            text-shadow: 0 0 5px rgba(0,255,0,0.5);
+            text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
         }
 
         .tab-btn.active {
             background: rgba(0, 255, 0, 0.1);
             color: var(--primary);
-            box-shadow: inset 0 0 5px rgba(0,255,0,0.3);
+            box-shadow: inset 0 0 5px rgba(0, 255, 0, 0.3);
         }
 
         main {
@@ -144,8 +145,15 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         /* Forms & Inputs */
@@ -200,7 +208,7 @@
             text-transform: uppercase;
             cursor: pointer;
             transition: all 0.2s ease;
-            box-shadow: 0 0 5px rgba(0,255,0,0.2);
+            box-shadow: 0 0 5px rgba(0, 255, 0, 0.2);
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -211,7 +219,7 @@
         button.primary-btn:hover {
             background: var(--primary);
             color: #000;
-            box-shadow: 0 0 15px rgba(0,255,0,0.6);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.6);
         }
 
         button.primary-btn:active {
@@ -234,7 +242,7 @@
 
         .memory-card:hover {
             background: #111111;
-            box-shadow: 0 0 10px rgba(0,255,0,0.2);
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
         }
 
         .memory-content {
@@ -267,7 +275,19 @@
         .delete-btn:hover {
             background: var(--danger);
             color: #000;
-            box-shadow: 0 0 10px rgba(255,0,0,0.5);
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+        }
+
+        /* Login Screen */
+        .login-container {
+            width: 100%;
+            max-width: 400px;
+            padding: 2rem;
+            background: #050505;
+            border: 1px solid var(--border-glass);
+            border-top: 4px solid var(--primary);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.15);
+            display: none;
         }
 
         /* Chat UI */
@@ -316,7 +336,7 @@
             background: rgba(0, 255, 0, 0.1);
             border-color: var(--primary);
             color: var(--primary);
-            box-shadow: 0 0 5px rgba(0,255,0,0.2);
+            box-shadow: 0 0 5px rgba(0, 255, 0, 0.2);
             border-bottom-right-radius: 12px;
             border-top-left-radius: 12px;
             border-top-right-radius: 12px;
@@ -359,7 +379,9 @@
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         .toast {
@@ -401,8 +423,17 @@
 </head>
 
 <body>
+    <div class="login-container" id="login-screen">
+        <div class="brand-icon" style="margin: 0 auto 2rem auto; width: 64px; height: 64px; font-size: 2rem;">K</div>
+        <h1 style="text-align: center; margin-bottom: 2rem;">KAI SYSTEM</h1>
+        <p style="text-align: center; color: var(--text-muted); margin-bottom: 2rem;">UNAUTHORIZED ACCESS. PLEASE AUTHENTICATE.</p>
+        <button class="primary-btn" onclick="window.location.href='/auth/login'" style="width: 100%;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+            SIGN IN WITH GOOGLE
+        </button>
+    </div>
 
-    <div class="app-container">
+    <div class="app-container" id="app-screen" style="display: none;">
         <header>
             <div class="brand">
                 <div class="brand-icon">K</div>
@@ -446,7 +477,7 @@
             <h2 style="margin-bottom: 1.5rem;">User Profile</h2>
             <div class="form-group">
                 <label for="profile-name">Your Name</label>
-                <input type="text" id="profile-name" placeholder="E.g. Gourang">
+                <input type="text" id="profile-name" placeholder="E.g. User">
             </div>
             <div class="form-group">
                 <label for="profile-instructions">Custom Instructions / Context</label>
@@ -462,11 +493,28 @@
     <div class="toast" id="toast">Saved successfully!</div>
 
     <script>
-        // Secret token mapping (Normally we wouldn't expose webhook secret in JS, 
-        // but for personal single-user app it's fine, or we can prompt for it)
-        // We'll prompt the user if they try to use the chat without setting it in the code
-        let SECRET_TOKEN = localStorage.getItem('kai_token') || prompt("Please enter your WEBHOOK_SECRET:");
-        if (SECRET_TOKEN) localStorage.setItem('kai_token', SECRET_TOKEN);
+        // Secret token mapping
+        let SECRET_TOKEN = localStorage.getItem('kai_token');
+        
+        // Check for token in URL hash
+        const hash = window.location.hash;
+        if (hash.includes('token=')) {
+            const tokenParams = new URLSearchParams(hash.substring(1));
+            SECRET_TOKEN = tokenParams.get('token');
+            if (SECRET_TOKEN) {
+                localStorage.setItem('kai_token', SECRET_TOKEN);
+                window.history.replaceState(null, null, ' '); // clear hash
+            }
+        }
+
+        if (!SECRET_TOKEN) {
+            document.getElementById('login-screen').style.display = 'block';
+            document.getElementById('app-screen').style.display = 'none';
+        } else {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('app-screen').style.display = 'flex';
+            loadProfile();
+        }
 
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -645,7 +693,9 @@
         }
 
         // Initialize
-        loadProfile();
+        if (SECRET_TOKEN) {
+            loadProfile();
+        }
     </script>
 </body>
 
