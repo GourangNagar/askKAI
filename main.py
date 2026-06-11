@@ -211,7 +211,13 @@ embeddings = OpenAIEmbeddings(
 )
 
 # ── Data Isolation (Multi-Tenant) ─────────────────────────────────────────────
-vectorstore = Chroma(embedding_function=embeddings)
+CHROMA_DIR = DATA_DIR / "chromadb"
+CHROMA_DIR.mkdir(parents=True, exist_ok=True)
+
+vectorstore = Chroma(
+    persist_directory=str(CHROMA_DIR),
+    embedding_function=embeddings
+)
 
 semantic_router = SemanticRouter(embeddings)
 graph_engine = GraphEngine(llm)
@@ -219,8 +225,13 @@ graph_engine = GraphEngine(llm)
 def get_user_dir(user_id: str) -> Path:
     # Use email as folder name (sanitize it for filesystem safety)
     safe_id = "".join(c for c in user_id if c.isalnum() or c in ('@', '.', '-', '_'))
+    
+    # Path Traversal Protection: if the safe_id contains ".." or is otherwise risky, fallback to hash
+    if ".." in safe_id or safe_id.startswith(".") or safe_id.startswith("-"):
+        safe_id = hashlib.sha256(user_id.encode()).hexdigest()
+        
     user_dir = DATA_DIR / safe_id
-    user_dir.mkdir(exist_ok=True)
+    user_dir.mkdir(parents=True, exist_ok=True)
     return user_dir
 
 def get_memory_file(user_id: str) -> Path:
@@ -261,7 +272,7 @@ def sync_all_memory_to_chroma():
     
     # Iterate through all user directories in data/
     for user_dir in DATA_DIR.iterdir():
-        if user_dir.is_dir():
+        if user_dir.is_dir() and user_dir.name != "chromadb":
             user_id = user_dir.name
             memories = load_memory_from_disk(user_id)
             for m in memories:
@@ -278,7 +289,11 @@ def sync_all_memory_to_chroma():
         vectorstore.add_documents(docs, ids=ids)
         log.info(f"Loaded {len(docs)} memories across all tenants into ChromaDB")
 
-sync_all_memory_to_chroma()
+if vectorstore._collection.count() == 0:
+    log.info("ChromaDB is empty! Running initial sync from disk...")
+    sync_all_memory_to_chroma()
+else:
+    log.info(f"ChromaDB loaded from disk. Contains {vectorstore._collection.count()} vectors. Skipping sync.")
 
 def save_to_memory(fact: str, source: str, original: str, user_id: str) -> str:
     doc_id = str(uuid.uuid4())
