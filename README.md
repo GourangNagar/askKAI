@@ -104,14 +104,7 @@ uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 Open **http://localhost:8000** in your browser.
 
-### 3. Testing
-To ensure the backend works properly, a comprehensive smoke test suite is included.
-```bash
-python smoke_test.py
-```
-This tests all auth guards, semantic routing edge cases, and SQLite graph extractions.
-
-### 4. Google Cloud Run Deployment
+### 3. Google Cloud Run Deployment
 Kai is fully Dockerized and ready for Google Cloud Run serverless deployment. 
 
 ```bash
