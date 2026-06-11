@@ -1,170 +1,119 @@
-# Kai — Personal AI Assistant
+# Kai — Personal AI Assistant 🧠
 
-> Secure FastAPI webhook · LangChain Agentic RAG · OpenAI GPT-4o-mini · ChromaDB · Hacker UI
+> Secure FastAPI Server · Multi-Tenant Agentic RAG · iOS Shortcuts Integration 
+Kai is a highly optimized, fully private personal AI assistant designed to act as your "second brain". It effortlessly tracks expenses, remembers random facts, and answers your questions using advanced AI (Retrieval-Augmented Generation). 
 
-Kai is a highly optimized, fully persistent personal AI assistant designed to remember facts, track expenses, and answer questions. It features a responsive edge-to-edge "Hacker Theme" mobile-first web UI, and uses advanced Retrieval-Augmented Generation (RAG) to maintain long-term memory.
-
----
-
-## Features
-- **Long-Term Memory:** Remembers facts, names, and numbers indefinitely using ChromaDB vector storage.
-- **Smart Routing:** Automatically determines whether your input is a conversational question or a fact to save.
-- **Mobile-First UI:** A sleek, edge-to-edge iOS-optimized "Hacker Theme" interface (Solid black, Neon Green).
-- **Secure Webhooks:** Protected by a custom `WEBHOOK_SECRET` Bearer token.
-- **Docker Ready:** Includes a `Dockerfile` for seamless deployment to Google Cloud Run, AWS, or local homelabs.
+With the latest update, **Kai supports multiple users simultaneously!** Each user signs up with their email, gets their own secure "vault" of memories, and can securely sync data from their phone.
 
 ---
 
-## Architecture
+## 🚀 How to Use Kai
 
-```
-POST /webhook
-   │
-   ├── Bearer token check  (401 if invalid)
-   │
-   ├── LLM Router (OpenAI)  → SAVE | QUERY
-   │
-   ├── SAVE path
-   │     └── Extraction chain → clean fact → ChromaDB (persist)
-   │
-   └── QUERY path
-         └── Retriever (ChromaDB k=6) → RAG chain (OpenAI) → answer
-```
+If Kai is already deployed on the cloud, here is how you use it from start to finish:
+
+### 1. Create Your Account
+1. Open your Kai Live URL in your browser (e.g., `https://kai-backend-...run.app`).
+2. Click **Create an Account**.
+3. Enter your Name, Email, and a secure Password.
+4. *Important:* Write down your **12-Word Recovery Phrase**. If you ever forget your password, this is the *only* way to reset it!
+
+### 2. Talk to Kai
+Once logged in, you will see a sleek chat interface.
+- **Save a Memory:** Just tell Kai a fact! Type *"I bought a coffee for $4.50 today"* or *"My friend Sarah is allergic to peanuts"*. Kai will automatically detect that this is a fact and save it to your private vault.
+- **Ask a Question:** Ask *"How much have I spent on coffee?"* or *"What is Sarah allergic to?"* Kai will scan your private vault and instantly answer!
+
+### 3. Customize Your Profile
+Click the **Profile** tab in the top right. Here you can tell Kai exactly how you want to be treated. 
+- *Example:* "I am a software engineer. Only give me extremely short, factual answers without any conversational fluff."
+- Kai will read these instructions before *every single response*.
 
 ---
 
-## Quick Start (Local Setup)
+## 📱 Automating Kai with Apple Shortcuts (iOS)
 
-### 1. Set up environment
+You can turn Kai into an offline, lightning-fast expense tracker using Apple Shortcuts! This setup allows you to log expenses in 2 seconds, and your phone will secretly batch-sync them to Kai at midnight to save API costs.
 
+### Step 1: Get Your API Token
+1. Log into Kai on your phone or computer.
+2. Go to the **Profile** tab.
+3. Tap the **Copy API Token** button. This massive string of text is your digital passport.
+
+### Step 2: The "Log Expense" Shortcut
+This shortcut asks what you bought and saves it silently to your phone.
+1. Open the **Shortcuts app** on your iPhone and tap **+** to create a new shortcut. Name it "Log Expense".
+2. Add an **Ask for Input** action (Prompt: "What did you buy?", Type: Text).
+3. Add another **Ask for Input** action (Prompt: "How much?", Type: Number).
+4. Add a **Text** action and type: `I spent [Provided Input (Number)] on [Provided Input (Text)].`
+5. Add an **Append to File** action. 
+   - Set it to Append **Text** to File.
+   - Tap "File" and select **iCloud Drive** -> **Shortcuts**. 
+   - Set File Path to `kai_expenses.txt` and ensure "Make New Line" is checked.
+6. Add this shortcut to your home screen! Tap it anytime you buy something.
+
+### Step 3: The "Sync Kai" Shortcut
+This shortcut reads your expenses and sends them to your private Kai vault.
+1. Create a new shortcut named "Sync Kai".
+2. Add the **Get File** action (Turn OFF "Show Document Picker", Path: `kai_expenses.txt`, Turn OFF "Error If Not Found").
+3. Add an **If** action: If **File** `has any value`.
+4. Inside the If block, add a **Text** action: `Here are my expenses for today: [File]`
+5. Inside the If block, add a **Get Contents of URL** action:
+   - URL: `https://YOUR_KAI_URL.run.app/webhook`
+   - Method: **POST**
+   - Headers: Key = `Authorization`, Text = `Bearer <PASTE_YOUR_API_TOKEN_HERE>`
+   - Request Body: **JSON**
+   - Add field: `text` (Text) = `[Text]` (from step 4)
+   - Add field: `source` (Text) = `ios_midnight_batch`
+6. After the URL action (still inside the If block), add a **Delete File** action and set it to delete the `[File]`.
+
+### Step 4: Midnight Automation
+1. Go to the **Automation** tab in Shortcuts.
+2. Create a new **Time of Day** automation for `11:59 PM` (Daily).
+3. Choose **Run Immediately** (do NOT ask before running).
+4. Select your **"Sync Kai"** shortcut.
+*Done! Your expenses now log instantly and sync seamlessly in your sleep!*
+
+---
+
+## 💻 Tech Setup & Initialization (For Developers)
+
+To host Kai yourself, follow these steps:
+
+### 1. Environment Setup
+Clone the repository and set up your `.env` file:
 ```bash
-# Clone the repository
 git clone https://gitlab.com/gourang1/askkai.git
 cd askkai
-
-# Create .env file
 cp .env.example .env
-# Edit .env and add your OPENAI_API_KEY and WEBHOOK_SECRET
 ```
+Edit your `.env` and configure:
+- `OPENAI_API_KEY`: Your OpenAI Key (`sk-proj-...`)
+- `JWT_SECRET`: A long, random, secure string used to sign user tokens. **Keep this secret!**
 
-### 2. Install dependencies
-
+### 2. Local Initialization
 ```bash
-# It is recommended to use a virtual environment
+# Create a virtual environment
 python -m venv .venv
 source .venv/bin/activate
 
-# Install required packages
+# Install dependencies
 pip install -r requirements.txt
+
+# Run the server
+uvicorn main:app --host 0.0.0.0 --port 8000
 ```
+Open **http://localhost:8000** in your browser.
 
-### 3. Run the server
-
-```bash
-source .venv/bin/activate
-# Load env variables and start the server
-source .env 
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-```
-
-The Web UI will be available at: **http://localhost:8000**  
-Interactive API docs: **http://localhost:8000/docs**
-
----
-
-## Docker Deployment
-
-### Build
-
-```bash
-docker build -t kai:latest .
-```
-
-### Run Locally
-
-```bash
-docker run -d \
-  --name kai \
-  -p 8000:8000 \
-  -e OPENAI_API_KEY="your-openai-api-key" \
-  -e WEBHOOK_SECRET="your-secret-token" \
-  -v $(pwd)/data:/app/data \
-  --restart unless-stopped \
-  kai:latest
-```
-
-> The `-v` flag mounts the `/app/data` directory to your host so memory **persists across container restarts**.
-
-### Deploy to Google Cloud Run
+### 3. Google Cloud Run Deployment
+Kai is fully Dockerized and ready for Google Cloud Run serverless deployment. 
 
 ```bash
 gcloud run deploy kai-backend \
   --source . \
   --region asia-south1 \
   --allow-unauthenticated \
-  --set-env-vars="OPENAI_API_KEY=your-openai-api-key,WEBHOOK_SECRET=your-secret-token" \
+  --set-env-vars="OPENAI_API_KEY=your_key,JWT_SECRET=your_jwt_secret" \
   --execution-environment=gen2 \
   --add-volume=name=data-vol,type=cloud-storage,bucket=your-gcs-bucket-name \
   --add-volume-mount=volume=data-vol,mount-path=/app/data
 ```
-
----
-
-## API Usage Example
-
-### Save a fact / Add an expense
-
-```bash
-curl -X POST http://localhost:8000/webhook \
-  -H "Authorization: Bearer your-secret-token" \
-  -H "Content-Type: application/json" \
-  -d '{"text": "I spent $15 on lunch today at Subway."}'
-```
-
-**Response:**
-```json
-{
-  "action": "saved",
-  "message": "Got it! I've saved that to memory: \"Spent $15 on lunch at Subway today.\"",
-  "stored_fact": "Spent $15 on lunch at Subway today.",
-  "doc_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479"
-}
-```
-
-### Ask a question
-
-```bash
-curl -X POST http://localhost:8000/webhook \
-  -H "Authorization: Bearer your-secret-token" \
-  -H "Content-Type: application/json" \
-  -d '{"text": "How much did I spend on lunch today?"}'
-```
-
-**Response:**
-```json
-{
-  "action": "answered",
-  "message": "You spent $15 on lunch at Subway today.",
-  "stored_fact": null,
-  "doc_id": null
-}
-```
-
----
-
-## Environment Variables
-
-| Variable | Required | Default | Description |
-|---|---|---|---|
-| `OPENAI_API_KEY` | ✅ | — | OpenAI API key (`sk-proj-...`) |
-| `WEBHOOK_SECRET` | ✅ | — | Bearer token for authentication |
-| `OPENAI_MODEL` | ❌ | `gpt-4o-mini` | OpenAI Chat model name |
-| `EMBED_MODEL` | ❌ | `text-embedding-3-small` | OpenAI Embedding model |
-
----
-
-## Security Notes
-
-- All API requests to `/webhook`, `/api/memories`, and `/api/profile` require a valid `Authorization: Bearer <token>` header.
-- The web UI will prompt users for the Webhook Secret on first use and store it locally in the browser (`localStorage`).
-- Never commit `.env` containing your real keys.
+> **Note:** The GCS volume mount (`/app/data`) ensures that your SQLite users database and ChromaDB vector embeddings survive across serverless container restarts. Without this, your data will wipe every time the server spins down!

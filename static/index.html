@@ -3,7 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Kai — Personal AI Assistant</title>
@@ -57,7 +58,7 @@
             justify-content: space-between;
             align-items: center;
             background: #0a0a0a;
-            box-shadow: 0 0 15px rgba(0,255,0,0.1);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.1);
         }
 
         .brand {
@@ -67,11 +68,11 @@
         }
 
         .brand-icon {
-            width: 32px;
+            width: 48px;
             height: 32px;
             background: #000000;
             border: 1px solid var(--primary);
-            box-shadow: 0 0 8px rgba(0,255,0,0.5);
+            box-shadow: 0 0 8px rgba(0, 255, 0, 0.5);
             border-radius: 4px;
             display: flex;
             justify-content: center;
@@ -86,7 +87,7 @@
             font-weight: bold;
             letter-spacing: 1px;
             text-transform: uppercase;
-            text-shadow: 0 0 5px rgba(0,255,0,0.5);
+            text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
         }
 
         .nav-tabs {
@@ -113,13 +114,13 @@
 
         .tab-btn:hover {
             color: var(--primary);
-            text-shadow: 0 0 5px rgba(0,255,0,0.5);
+            text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
         }
 
         .tab-btn.active {
             background: rgba(0, 255, 0, 0.1);
             color: var(--primary);
-            box-shadow: inset 0 0 5px rgba(0,255,0,0.3);
+            box-shadow: inset 0 0 5px rgba(0, 255, 0, 0.3);
         }
 
         main {
@@ -144,8 +145,15 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         /* Forms & Inputs */
@@ -163,6 +171,8 @@
         }
 
         input[type="text"],
+        input[type="email"],
+        input[type="password"],
         textarea {
             width: 100%;
             background: #000000;
@@ -176,6 +186,8 @@
         }
 
         input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus,
         textarea:focus {
             outline: none;
             border-color: var(--primary);
@@ -200,7 +212,7 @@
             text-transform: uppercase;
             cursor: pointer;
             transition: all 0.2s ease;
-            box-shadow: 0 0 5px rgba(0,255,0,0.2);
+            box-shadow: 0 0 5px rgba(0, 255, 0, 0.2);
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -211,7 +223,7 @@
         button.primary-btn:hover {
             background: var(--primary);
             color: #000;
-            box-shadow: 0 0 15px rgba(0,255,0,0.6);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.6);
         }
 
         button.primary-btn:active {
@@ -234,7 +246,7 @@
 
         .memory-card:hover {
             background: #111111;
-            box-shadow: 0 0 10px rgba(0,255,0,0.2);
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
         }
 
         .memory-content {
@@ -267,7 +279,19 @@
         .delete-btn:hover {
             background: var(--danger);
             color: #000;
-            box-shadow: 0 0 10px rgba(255,0,0,0.5);
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+        }
+
+        /* Login Screen */
+        .login-container {
+            width: 100%;
+            max-width: 400px;
+            padding: 2rem;
+            background: #050505;
+            border: 1px solid var(--border-glass);
+            border-top: 4px solid var(--primary);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.15);
+            display: none;
         }
 
         /* Chat UI */
@@ -316,7 +340,7 @@
             background: rgba(0, 255, 0, 0.1);
             border-color: var(--primary);
             color: var(--primary);
-            box-shadow: 0 0 5px rgba(0,255,0,0.2);
+            box-shadow: 0 0 5px rgba(0, 255, 0, 0.2);
             border-bottom-right-radius: 12px;
             border-top-left-radius: 12px;
             border-top-right-radius: 12px;
@@ -359,7 +383,9 @@
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         .toast {
@@ -397,17 +423,49 @@
             padding: 3rem 0;
             font-style: italic;
         }
+
+        @media (max-width: 600px) {
+            .profile-actions {
+                flex-direction: column !important;
+            }
+        }
     </style>
 </head>
 
 <body>
+    <div class="login-container" id="login-screen">
+        <div class="brand-icon" style="margin: 0 auto 2rem auto; width: 140px; height: 64px; font-size: 2rem;">askKAI
+        </div>
+        <h1 style="text-align: center; margin-bottom: 2rem;">"海" means "Ocean" & its pronounced "kai"</h1>
 
-    <div class="app-container">
+        <form id="auth-form" onsubmit="handleAuth(event)">
+            <input type="text" id="auth-name" placeholder="YOUR NAME" style="margin-bottom: 1rem; display: none;">
+            <input type="email" id="auth-email" placeholder="USER EMAIL" required style="margin-bottom: 1rem;">
+            <input type="text" id="auth-recovery" placeholder="12-WORD RECOVERY PHRASE"
+                style="margin-bottom: 1rem; display: none;">
+            <input type="password" id="auth-password" placeholder="PASSWORD" required style="margin-bottom: 1rem;">
+
+            <button type="submit" class="primary-btn" id="auth-submit-btn" style="width: 100%; margin-bottom: 1rem;">
+                AUTHENTICATE
+            </button>
+        </form>
+
+        <p style="text-align: center; color: var(--text-muted); cursor: pointer; text-decoration: underline;"
+            onclick="setAuthMode('register')" id="auth-toggle-1">
+            No account? Register here.
+        </p>
+        <p style="text-align: center; color: var(--text-muted); cursor: pointer; text-decoration: underline; margin-top: 1rem;"
+            onclick="setAuthMode('forgot')" id="auth-toggle-2">
+            Forgot Password?
+        </p>
+        <p id="auth-error" style="color: var(--danger); text-align: center; margin-top: 1rem; display: none;"></p>
+    </div>
+
+    <div class="app-container" id="app-screen" style="display: none;">
         <header>
             <div class="brand">
-                <div class="brand-icon">K</div>
-                <h1>Kai <span style="color:var(--text-muted); font-size:0.875rem; font-weight:normal;">Assistant</span>
-                </h1>
+                <div class="brand-icon">海</div>
+                <h1><span id="header-user-name">Kai</span></h1>
             </div>
             <div class="nav-tabs">
                 <button class="tab-btn active" onclick="switchTab('chat')">Chat</button>
@@ -446,7 +504,7 @@
             <h2 style="margin-bottom: 1.5rem;">User Profile</h2>
             <div class="form-group">
                 <label for="profile-name">Your Name</label>
-                <input type="text" id="profile-name" placeholder="E.g. Gourang">
+                <input type="text" id="profile-name" placeholder="E.g. User">
             </div>
             <div class="form-group">
                 <label for="profile-instructions">Custom Instructions / Context</label>
@@ -455,18 +513,151 @@
                 <p style="font-size:0.75rem; color:var(--text-muted); margin-top:0.5rem;">Kai reads this context before
                     answering any of your questions.</p>
             </div>
-            <button class="primary-btn" onclick="saveProfile()" id="save-profile-btn">Save Profile</button>
+            
+            <div class="form-group" style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-glass);">
+                <label for="profile-token" style="color: var(--primary);">Your Personal API Token (For iOS Shortcuts)</label>
+                <div style="margin-top: 0.5rem;">
+                    <button class="primary-btn" onclick="copyToken()" style="width: 100%; font-size: 0.8rem;">Copy API Token</button>
+                </div>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin-top:0.5rem;">Use this long token as your Authorization Bearer key in your Apple Shortcut. Do not share this!</p>
+            </div>
+            <div class="profile-actions" style="display: flex; gap: 1rem;">
+                <button class="primary-btn" onclick="saveProfile()" id="save-profile-btn" style="flex: 1;">Save
+                    Profile</button>
+                <button class="primary-btn" onclick="logout()"
+                    style="flex: 1; background: transparent; border-color: var(--danger); color: var(--danger);">Logout</button>
+            </div>
         </main>
     </div>
 
     <div class="toast" id="toast">Saved successfully!</div>
 
+    <!-- Recovery Phrase Modal -->
+    <div id="recovery-modal"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
+        <div
+            style="background:#050505; border:1px solid var(--border-glass); border-top:4px solid var(--primary); padding:2rem; max-width:400px; width:90%; text-align:center; box-shadow: 0 0 20px rgba(0, 255, 0, 0.15);">
+            <h2 style="color:var(--danger); margin-bottom:1rem;">CRITICAL WARNING</h2>
+            <p style="margin-bottom:1rem; font-size:0.875rem; color:var(--text-muted);">Please save this 12-word
+                Recovery Phrase somewhere safe. It is the ONLY way to reset your password if you lose it.</p>
+            <div id="recovery-phrase-display"
+                style="background:#000; border:1px solid var(--primary); padding:1rem; margin-bottom:1.5rem; color:var(--primary); font-family:monospace; font-size:1.1rem; line-height:1.5; letter-spacing:1px;">
+            </div>
+            <button class="primary-btn" style="width:100%;" onclick="closeRecoveryModal()">I HAVE SAVED IT</button>
+        </div>
+    </div>
+
     <script>
-        // Secret token mapping (Normally we wouldn't expose webhook secret in JS, 
-        // but for personal single-user app it's fine, or we can prompt for it)
-        // We'll prompt the user if they try to use the chat without setting it in the code
-        let SECRET_TOKEN = localStorage.getItem('kai_token') || prompt("Please enter your WEBHOOK_SECRET:");
-        if (SECRET_TOKEN) localStorage.setItem('kai_token', SECRET_TOKEN);
+        function showRecoveryModal(phrase) {
+            document.getElementById('recovery-phrase-display').innerText = phrase;
+            document.getElementById('recovery-modal').style.display = 'flex';
+        }
+
+        function closeRecoveryModal() {
+            document.getElementById('recovery-modal').style.display = 'none';
+        }
+
+        // Secret token mapping
+        let SECRET_TOKEN = localStorage.getItem('kai_token');
+        let authMode = 'login'; // 'login' | 'register' | 'forgot'
+
+        function setAuthMode(mode) {
+            authMode = mode;
+            document.getElementById('auth-error').style.display = 'none';
+
+            const nameEl = document.getElementById('auth-name');
+            const recEl = document.getElementById('auth-recovery');
+            const passEl = document.getElementById('auth-password');
+            const btn = document.getElementById('auth-submit-btn');
+            const toggle1 = document.getElementById('auth-toggle-1');
+            const toggle2 = document.getElementById('auth-toggle-2');
+
+            if (mode === 'login') {
+                nameEl.style.display = 'none'; nameEl.required = false;
+                recEl.style.display = 'none'; recEl.required = false;
+                passEl.placeholder = 'PASSWORD';
+                btn.innerText = 'AUTHENTICATE';
+                toggle1.innerText = 'No account? Register here.';
+                toggle1.onclick = () => setAuthMode('register');
+                toggle2.style.display = 'block';
+            } else if (mode === 'register') {
+                nameEl.style.display = 'block'; nameEl.required = true;
+                recEl.style.display = 'none'; recEl.required = false;
+                passEl.placeholder = 'CREATE PASSWORD';
+                btn.innerText = 'INITIALIZE NEW USER';
+                toggle1.innerText = 'Already have access? Login here.';
+                toggle1.onclick = () => setAuthMode('login');
+                toggle2.style.display = 'none';
+            } else if (mode === 'forgot') {
+                nameEl.style.display = 'none'; nameEl.required = false;
+                recEl.style.display = 'block'; recEl.required = true;
+                passEl.placeholder = 'NEW PASSWORD';
+                btn.innerText = 'RESET PASSWORD';
+                toggle1.innerText = 'Back to Login';
+                toggle1.onclick = () => setAuthMode('login');
+                toggle2.style.display = 'none';
+            }
+        }
+
+        async function handleAuth(e) {
+            e.preventDefault();
+            const name = document.getElementById('auth-name').value;
+            const email = document.getElementById('auth-email').value;
+            const recovery_phrase = document.getElementById('auth-recovery').value;
+            const password = document.getElementById('auth-password').value;
+            const errorEl = document.getElementById('auth-error');
+
+            let endpoint = '/auth/login';
+            let payload = { email, password };
+
+            if (authMode === 'register') {
+                endpoint = '/auth/register';
+                payload.name = name;
+            } else if (authMode === 'forgot') {
+                endpoint = '/auth/reset-password';
+                payload.recovery_phrase = recovery_phrase;
+            }
+
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+
+                if (!res.ok) {
+                    errorEl.innerText = data.detail || 'Authentication failed.';
+                    errorEl.style.display = 'block';
+                } else {
+                    if (authMode === 'forgot') {
+                        alert(data.message);
+                        setAuthMode('login');
+                        return;
+                    }
+                    if (authMode === 'register' && data.recovery_phrase) {
+                        showRecoveryModal(data.recovery_phrase);
+                    }
+                    localStorage.setItem('kai_token', data.token);
+                    SECRET_TOKEN = data.token;
+                    document.getElementById('login-screen').style.display = 'none';
+                    document.getElementById('app-screen').style.display = 'flex';
+                    loadProfile();
+                }
+            } catch (err) {
+                errorEl.innerText = 'Network error.';
+                errorEl.style.display = 'block';
+            }
+        }
+
+        if (!SECRET_TOKEN) {
+            document.getElementById('login-screen').style.display = 'block';
+            document.getElementById('app-screen').style.display = 'none';
+        } else {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('app-screen').style.display = 'flex';
+            loadProfile();
+        }
 
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -487,13 +678,32 @@
         }
 
         // --- Profile ---
+        function logout() {
+            localStorage.removeItem('kai_token');
+            SECRET_TOKEN = null;
+            document.getElementById('login-screen').style.display = 'block';
+            document.getElementById('app-screen').style.display = 'none';
+        }
+
+        function copyToken() {
+            if (!SECRET_TOKEN) return;
+            navigator.clipboard.writeText(SECRET_TOKEN).then(() => {
+                const toast = document.getElementById('toast');
+                toast.innerText = "Token copied to clipboard!";
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 3000);
+            });
+        }
+
         async function loadProfile() {
             if (!SECRET_TOKEN) return;
             try {
                 const res = await fetch('/api/profile', {
                     headers: { 'Authorization': `Bearer ${SECRET_TOKEN}` }
                 });
+                if (res.status === 401) return logout();
                 const data = await res.json();
+                document.getElementById('header-user-name').innerText = data.name || 'Kai';
                 document.getElementById('profile-name').value = data.name || '';
                 document.getElementById('profile-instructions').value = data.instructions || '';
             } catch (e) {
@@ -510,7 +720,7 @@
             const instructions = document.getElementById('profile-instructions').value;
 
             try {
-                await fetch('/api/profile', {
+                const res = await fetch('/api/profile', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -518,6 +728,7 @@
                     },
                     body: JSON.stringify({ name, instructions })
                 });
+                if (res.status === 401) return logout();
                 showToast("Profile saved!");
             } catch (e) {
                 showToast("Error saving profile", true);
@@ -542,6 +753,7 @@
                 const res = await fetch('/api/memories', {
                     headers: { 'Authorization': `Bearer ${SECRET_TOKEN}` }
                 });
+                if (res.status === 401) return logout();
                 const memories = await res.json();
 
                 if (memories.length === 0) {
@@ -571,10 +783,11 @@
         async function deleteMemory(id) {
             if (!confirm("Delete this memory forever?")) return;
             try {
-                await fetch(`/api/memories/${id}`, {
+                const res = await fetch(`/api/memories/${id}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${SECRET_TOKEN}` }
                 });
+                if (res.status === 401) return logout();
                 document.getElementById(`mem-${id}`).remove();
                 showToast("Memory deleted");
             } catch (e) {
@@ -606,11 +819,7 @@
             const text = input.value.trim();
             if (!text) return;
 
-            if (!SECRET_TOKEN) {
-                SECRET_TOKEN = prompt("Please enter your WEBHOOK_SECRET:");
-                if (SECRET_TOKEN) localStorage.setItem('kai_token', SECRET_TOKEN);
-                else return;
-            }
+            if (!SECRET_TOKEN) return logout();
 
             input.value = '';
             appendMessage(text, true);
@@ -629,6 +838,8 @@
                     body: JSON.stringify({ text, source: 'web' })
                 });
 
+                if (res.status === 401) return logout();
+
                 const data = await res.json();
                 if (res.ok) {
                     appendMessage(data.message, false);
@@ -645,7 +856,9 @@
         }
 
         // Initialize
-        loadProfile();
+        if (SECRET_TOKEN) {
+            loadProfile();
+        }
     </script>
 </body>
 
