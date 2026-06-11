@@ -21,5 +21,11 @@
     "password": "$2b$12$7X5SdZdha9sOu3mMjNpRFuP7ofBv8JvZ5at6u.w7e4.RYIs6dt3gm",
     "recovery_phrase": "$2b$12$YiDZqv8WoEtuTXgFiHXsK.7JSicXFSPX6ZsOx/XRwRWKqyhnRMsdq",
     "created_at": "2026-06-10T22:14:35.769784"
+  },
+  "myuser@gmail.com": {
+    "email": "myuser@gmail.com",
+    "password": "$2b$12$525K0n6gRw05hs/J3.uNvOwWVFKDXHZU1AxW4ILyGJ9lOPcwax2s6",
+    "recovery_phrase": "$2b$12$artwfcPsnI4Ze0vtM9n/3O3QcgvVek1INVwtadD.O6TXCeu6tUOba",
+    "created_at": "2026-06-11T00:44:28.933551"
   }
 }
