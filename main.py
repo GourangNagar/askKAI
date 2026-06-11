@@ -30,7 +30,6 @@ from langchain_core.documents import Document
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 
-from semantic_router import SemanticRouter
 from graph_engine import GraphEngine
 
 from dotenv import load_dotenv
@@ -221,7 +220,6 @@ vectorstore = Chroma(
     embedding_function=embeddings
 )
 
-semantic_router = SemanticRouter(embeddings)
 graph_engine = GraphEngine(llm)
 
 def get_user_dir(user_id: str) -> Path:
@@ -344,7 +342,19 @@ def delete_from_memory(doc_id: str, user_id: str) -> bool:
 
 # ── Prompts ───────────────────────────────────────────────────────────────────
 
-# ROUTER_PROMPT removed — routing is now handled by SemanticRouter (no LLM call needed)
+ROUTER_PROMPT = PromptTemplate.from_template(
+    """You are an intent classification engine for a personal AI assistant.
+Determine if the user's message is a statement of fact to be saved, a question to be answered, or both.
+
+Categories:
+- SAVE: The user is stating a fact, preference, or logging an expense. (e.g., "I work at Natwest", "I spent $15 on lunch", "My name is John")
+- QUERY: The user is asking a question or requesting information. (e.g., "What is my salary?", "How much did I spend?", "Tell me my job")
+- BOTH: The message contains both a new fact to save AND a question. (e.g., "I just got paid $5000, what is my total balance?")
+
+User message: {text}
+
+Output ONLY the exact category name (SAVE, QUERY, or BOTH)."""
+)
 
 EXTRACTION_PROMPT = PromptTemplate.from_template(
     """You are Kai. Extract and rewrite the following user statement as a clean, complete factual sentence suitable for long-term memory storage. 
@@ -397,6 +407,7 @@ Consolidated Memory Block:"""
 
 extraction_chain = EXTRACTION_PROMPT | llm | StrOutputParser()
 consolidation_chain = CONSOLIDATION_PROMPT | llm | StrOutputParser()
+router_chain = ROUTER_PROMPT | llm | StrOutputParser()
 
 def build_dynamic_rag_chain(user_id: str, query_embedding: list):
     
@@ -459,12 +470,18 @@ async def webhook(
         if not text:
             return JSONResponse(status_code=400, content={"error": "'text' field must not be empty.", "action": "error", "message": "Empty text"})
 
-        # Step 1: Pre-compute Embedding (Optimized to share between Router and DB)
-        # We must ONLY embed the raw text, because appending history makes questions look like statements to the Semantic Router
+        # Step 1: Pre-compute Embedding for downstream RAG
         query_embedding = embeddings.embed_query(text)
             
-        # Step 2: Route using Semantic Vectors + syntactic heuristic
-        route = semantic_router.route_intent(text=text, input_vector=query_embedding)
+        # Step 2: Route using LLM for highly accurate semantic intent
+        route_result = router_chain.invoke({"text": text}).strip().upper()
+        
+        # Parse result safely
+        route = "QUERY"
+        if "BOTH" in route_result:
+            route = "BOTH"
+        elif "SAVE" in route_result:
+            route = "SAVE"
 
         # Step 2a: SAVE
         if route == "SAVE":

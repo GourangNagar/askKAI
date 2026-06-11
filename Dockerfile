@@ -58,7 +58,6 @@ VOLUME ["/app/data"]
 
 # Copy application source and static UI
 COPY main.py .
-COPY semantic_router.py .
 COPY graph_engine.py .
 COPY static ./static
 
