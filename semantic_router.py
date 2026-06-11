@@ -52,6 +52,10 @@ class SemanticRouter:
         # Calculate max similarity to QUERY samples
         max_query_sim = max([self._cosine_similarity(input_vector, qv) for qv in self.query_vectors])
         
+        # If neither is a strong match, default to a conversational query
+        if max(max_save_sim, max_query_sim) < 0.25:
+            return "QUERY"
+        
         if max_save_sim > max_query_sim:
             return "SAVE"
         else:

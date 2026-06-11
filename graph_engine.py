@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 import networkx as nx
+from filelock import FileLock
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
@@ -37,10 +38,12 @@ class GraphEngine:
         
     def _load_graph(self, user_dir: Path) -> nx.DiGraph:
         g_file = self._get_graph_file(user_dir)
+        lock_file = g_file.with_suffix('.lock')
         if g_file.exists():
             try:
-                with open(g_file, "r") as f:
-                    data = json.load(f)
+                with FileLock(str(lock_file), timeout=5):
+                    with open(g_file, "r") as f:
+                        data = json.load(f)
                 return nx.node_link_graph(data)
             except Exception:
                 return nx.DiGraph()
@@ -48,8 +51,18 @@ class GraphEngine:
         
     def _save_graph(self, g: nx.DiGraph, user_dir: Path):
         g_file = self._get_graph_file(user_dir)
-        with open(g_file, "w") as f:
-            json.dump(nx.node_link_data(g), f, indent=2)
+        lock_file = g_file.with_suffix('.lock')
+        with FileLock(str(lock_file), timeout=5):
+            with open(g_file, "w") as f:
+                json.dump(nx.node_link_data(g), f, indent=2)
+
+    def wipe_graph(self, user_dir: Path):
+        """Completely deletes the graph and its lock file to prevent ghost nodes."""
+        g_file = self._get_graph_file(user_dir)
+        lock_file = g_file.with_suffix('.lock')
+        with FileLock(str(lock_file), timeout=5):
+            if g_file.exists():
+                g_file.unlink()
 
     def extract_and_store_graph(self, text: str, user_dir: Path):
         """Extracts entities and adds them to the user's NetworkX graph."""

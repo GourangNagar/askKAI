@@ -21,6 +21,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 import bcrypt
+from filelock import FileLock
 
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_chroma import Chroma
@@ -87,12 +88,16 @@ class AuthPayload(BaseModel):
     recovery_phrase: Optional[str] = None
 
 def load_users():
-    with open(USERS_FILE, "r") as f:
-        return json.load(f)
+    lock_file = USERS_FILE.with_suffix('.lock')
+    with FileLock(str(lock_file), timeout=5):
+        with open(USERS_FILE, "r") as f:
+            return json.load(f)
 
 def save_users(users):
-    with open(USERS_FILE, "w") as f:
-        json.dump(users, f, indent=2)
+    lock_file = USERS_FILE.with_suffix('.lock')
+    with FileLock(str(lock_file), timeout=5):
+        with open(USERS_FILE, "w") as f:
+            json.dump(users, f, indent=2)
 
 @app.post("/auth/register")
 async def register(payload: AuthPayload):
@@ -226,22 +231,28 @@ def get_profile_file(user_id: str) -> Path:
 
 def load_profile_from_disk(user_id: str) -> dict:
     pf = get_profile_file(user_id)
+    lock_file = pf.with_suffix('.lock')
     if pf.exists():
-        with open(pf, "r") as f:
-            return json.load(f)
+        with FileLock(str(lock_file), timeout=5):
+            with open(pf, "r") as f:
+                return json.load(f)
     return {"name": "User", "instructions": "I prefer concise and direct answers."}
 
 def load_memory_from_disk(user_id: str) -> list:
     mf = get_memory_file(user_id)
+    lock_file = mf.with_suffix('.lock')
     if mf.exists():
-        with open(mf, "r") as f:
-            return json.load(f)
+        with FileLock(str(lock_file), timeout=5):
+            with open(mf, "r") as f:
+                return json.load(f)
     return []
 
 def save_memory_to_disk(memories: list, user_id: str):
     mf = get_memory_file(user_id)
-    with open(mf, "w") as f:
-        json.dump(memories, f, indent=2)
+    lock_file = mf.with_suffix('.lock')
+    with FileLock(str(lock_file), timeout=5):
+        with open(mf, "w") as f:
+            json.dump(memories, f, indent=2)
 
 def sync_all_memory_to_chroma():
     log.info("Loading all tenant memories into ChromaDB...")
@@ -493,8 +504,10 @@ async def get_profile(user_id: str = Depends(verify_token)):
 @app.post("/api/profile")
 async def update_profile(profile: ProfilePayload, user_id: str = Depends(verify_token)):
     pf = get_profile_file(user_id)
-    with open(pf, "w") as f:
-        json.dump(profile.model_dump(), f, indent=2)
+    lock_file = pf.with_suffix('.lock')
+    with FileLock(str(lock_file), timeout=5):
+        with open(pf, "w") as f:
+            json.dump(profile.model_dump(), f, indent=2)
     return {"status": "success"}
 
 @app.get("/api/memories")
@@ -517,22 +530,38 @@ async def consolidate_memories(user_id: str = Depends(verify_token)):
     if len(memories) < 2:
         return {"action": "skipped", "message": "Not enough memories to consolidate."}
         
-    raw_memories_text = "\n".join([f"- {m['fact']}" for m in memories])
-    
     log.info(f"Running consolidation for user [{user_id}] on {len(memories)} memories...")
     
-    # Run LLM consolidation
-    consolidated_fact = consolidation_chain.invoke({"memories": raw_memories_text}).strip()
+    # Chunk memories to prevent LLM context limit crashes
+    chunk_size = 30
+    consolidated_chunks = []
+    
+    for i in range(0, len(memories), chunk_size):
+        chunk = memories[i:i + chunk_size]
+        raw_text = "\n".join([f"- {m['fact']}" for m in chunk])
+        res = consolidation_chain.invoke({"memories": raw_text}).strip()
+        consolidated_chunks.append(res)
+        
+    # If there were multiple chunks, consolidate them one final time
+    if len(consolidated_chunks) > 1:
+        final_raw = "\n".join([f"- {c}" for c in consolidated_chunks])
+        consolidated_fact = consolidation_chain.invoke({"memories": final_raw}).strip()
+    else:
+        consolidated_fact = consolidated_chunks[0]
     
     # Delete old memories
     for m in memories:
         delete_from_memory(m["id"], user_id)
         
-    # Save the new thick block
-    new_doc_id = save_to_memory(consolidated_fact, source="consolidation", original=raw_memories_text, user_id=user_id)
+    # Save new consolidated memory
+    doc_id = save_to_memory(consolidated_fact, "consolidation", consolidated_fact, user_id)
     
-    log.info(f"Consolidation complete. Created block {new_doc_id}")
-    return {"action": "consolidated", "new_doc_id": new_doc_id, "consolidated_fact": consolidated_fact}
+    # Wipe the old graph to fix ghost nodes and rebuild it from the perfect summary
+    user_dir = get_user_dir(user_id)
+    graph_engine.wipe_graph(user_dir)
+    graph_engine.extract_and_store_graph(consolidated_fact, user_dir)
+    
+    return {"action": "consolidated", "new_doc_id": doc_id, "consolidated_fact": consolidated_fact}
 
 # Serve static files for the UI
 static_dir = Path("static")
