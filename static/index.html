@@ -521,6 +521,12 @@
                 </div>
                 <p style="font-size:0.75rem; color:var(--text-muted); margin-top:0.5rem;">Use this long token as your Authorization Bearer key in your Apple Shortcut. Do not share this!</p>
             </div>
+            
+            <div class="form-group" style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-glass);">
+                <label style="color: #9d00ff;">[Experimental] Deep Sleep Consolidation</label>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin-top:0.5rem; margin-bottom:1rem;">Manually trigger the memory compaction process. This will merge all scattered memories into a single dense summary block, saving tokens and improving AI accuracy.</p>
+                <button class="primary-btn" onclick="runConsolidation()" id="consolidate-btn" style="width: 100%; border-color: #9d00ff; color: #9d00ff; font-size: 0.8rem;">Run Memory Consolidation</button>
+            </div>
             <div class="profile-actions" style="display: flex; gap: 1rem;">
                 <button class="primary-btn" onclick="saveProfile()" id="save-profile-btn" style="flex: 1;">Save
                     Profile</button>
@@ -693,6 +699,36 @@
                 toast.classList.add('show');
                 setTimeout(() => toast.classList.remove('show'), 3000);
             });
+        }
+        
+        async function runConsolidation() {
+            if (!SECRET_TOKEN) return;
+            const btn = document.getElementById('consolidate-btn');
+            btn.innerHTML = '<div class="loader"></div> Compacting...';
+            
+            try {
+                const res = await fetch('/api/consolidate', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${SECRET_TOKEN}` }
+                });
+                const data = await res.json();
+                
+                const toast = document.getElementById('toast');
+                if (data.action === 'skipped') {
+                    toast.innerText = data.message;
+                } else {
+                    toast.innerText = "Consolidation complete!";
+                    switchTab('memories'); // Navigate to memories to see the result
+                    loadMemories();
+                }
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 3000);
+            } catch (e) {
+                console.error(e);
+                alert("Consolidation failed.");
+            } finally {
+                btn.innerHTML = 'Run Memory Consolidation';
+            }
         }
 
         async function loadProfile() {

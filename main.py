@@ -29,6 +29,9 @@ from langchain_core.documents import Document
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 
+from semantic_router import SemanticRouter
+from graph_engine import GraphEngine
+
 from dotenv import load_dotenv
 
 # Load the secrets FIRST
@@ -205,6 +208,9 @@ embeddings = OpenAIEmbeddings(
 # ── Data Isolation (Multi-Tenant) ─────────────────────────────────────────────
 vectorstore = Chroma(embedding_function=embeddings)
 
+semantic_router = SemanticRouter(embeddings)
+graph_engine = GraphEngine(llm)
+
 def get_user_dir(user_id: str) -> Path:
     # Use email as folder name (sanitize it for filesystem safety)
     safe_id = "".join(c for c in user_id if c.isalnum() or c in ('@', '.', '-', '_'))
@@ -342,19 +348,34 @@ Today's date: {today}
 --- User Profile & Instructions ---
 {profile}
 
---- Memory Context ---
+--- Memory Context (Vectors) ---
 {context}
+
+--- Relational Graph Context (Entities) ---
+{graph_context}
 --- End of Context ---
 
-User question: {question}
-
+Question: {question}
 Kai's answer:"""
+)
+
+CONSOLIDATION_PROMPT = PromptTemplate.from_template(
+    """You are Kai. Your task is to perform "Deep Sleep Memory Consolidation".
+You are given a list of disjointed, raw memories logged over time.
+Your task is to deduplicate them, aggregate related items (especially expenses), and write a single, dense, factual summary block.
+Do NOT lose any unique facts. If there are distinct unrelated facts, combine them logically.
+Output ONLY the final consolidated memory block. Do not add conversational filler.
+
+--- Raw Memories ---
+{memories}
+
+Consolidated Memory Block:"""
 )
 
 # ── Chain Builders ────────────────────────────────────────────────────────────
 
-router_chain     = ROUTER_PROMPT | llm | StrOutputParser()
 extraction_chain = EXTRACTION_PROMPT | llm | StrOutputParser()
+consolidation_chain = CONSOLIDATION_PROMPT | llm | StrOutputParser()
 
 def build_dynamic_rag_chain(user_id: str):
     # Dynamic retriever locked to the specific user namespace
@@ -375,6 +396,7 @@ def build_dynamic_rag_chain(user_id: str):
     return (
         {
             "context":  retriever | format_docs,
+            "graph_context": lambda question: graph_engine.query_graph(question, get_user_dir(user_id)),
             "question": RunnablePassthrough(),
             "today":    lambda _: datetime.now().strftime("%A, %d %B %Y"),
             "profile":  load_profile,
@@ -418,13 +440,17 @@ async def webhook(
         if not text:
             return JSONResponse(status_code=400, content={"error": "'text' field must not be empty.", "action": "error", "message": "Empty text"})
 
-        # Step 1: Route
-        route = router_chain.invoke({"text": text}).strip().upper()
+        # Step 1: Route using Semantic Vectors (No LLM)
+        route = semantic_router.route_intent(text)
 
         # Step 2a: SAVE
         if "SAVE" in route:
             clean_fact = extraction_chain.invoke({"text": text, "today": today}).strip()
             doc_id     = save_to_memory(clean_fact, source, text, user_id)
+            
+            # Extract and update Knowledge Graph
+            graph_engine.extract_and_store_graph(clean_fact, get_user_dir(user_id))
+            
             return WebhookResponse(
                 action="saved",
                 message="Got it.",
@@ -466,14 +492,38 @@ async def update_profile(profile: ProfilePayload, user_id: str = Depends(verify_
 async def get_memories(user_id: str = Depends(verify_token)):
     memories = load_memory_from_disk(user_id)
     # Return newest first
-    return sorted(memories, key=lambda x: x.get("timestamp", ""), reverse=True)
+    memories.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+    return memories
 
 @app.delete("/api/memories/{doc_id}")
-async def delete_memory_api(doc_id: str, user_id: str = Depends(verify_token)):
+async def delete_memory_endpoint(doc_id: str, user_id: str = Depends(verify_token)):
     success = delete_from_memory(doc_id, user_id)
     if not success:
-        raise HTTPException(status_code=404, detail="Memory not found")
-    return {"status": "success"}
+        raise HTTPException(status_code=404, detail="Memory not found.")
+    return {"action": "deleted", "doc_id": doc_id}
+
+@app.post("/api/consolidate")
+async def consolidate_memories(user_id: str = Depends(verify_token)):
+    memories = load_memory_from_disk(user_id)
+    if len(memories) < 2:
+        return {"action": "skipped", "message": "Not enough memories to consolidate."}
+        
+    raw_memories_text = "\n".join([f"- {m['fact']}" for m in memories])
+    
+    log.info(f"Running consolidation for user [{user_id}] on {len(memories)} memories...")
+    
+    # Run LLM consolidation
+    consolidated_fact = consolidation_chain.invoke({"memories": raw_memories_text}).strip()
+    
+    # Delete old memories
+    for m in memories:
+        delete_from_memory(m["id"], user_id)
+        
+    # Save the new thick block
+    new_doc_id = save_to_memory(consolidated_fact, source="consolidation", original=raw_memories_text, user_id=user_id)
+    
+    log.info(f"Consolidation complete. Created block {new_doc_id}")
+    return {"action": "consolidated", "new_doc_id": new_doc_id, "consolidated_fact": consolidated_fact}
 
 # Serve static files for the UI
 static_dir = Path("static")

@@ -13,3 +13,5 @@ pyjwt
 httpx
 itsdangerous
 bcrypt
+networkx
+numpy
