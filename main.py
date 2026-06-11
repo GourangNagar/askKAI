@@ -5,11 +5,14 @@ FastAPI webhook server with LangChain Agentic RAG, OpenAI, ChromaDB, and Google 
 
 import os
 import uuid
+
+
 import json
 import logging
 import hashlib
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+IST = timezone(timedelta(hours=5, minutes=30))
 from typing import Optional, List
 import secrets
 
@@ -297,7 +300,7 @@ else:
 
 def save_to_memory(fact: str, source: str, original: str, user_id: str) -> str:
     doc_id = str(uuid.uuid4())
-    timestamp = datetime.utcnow().isoformat()
+    timestamp = datetime.now(IST).isoformat()
     
     # 1. Add to Chroma with user_id metadata
     doc = Document(
@@ -462,7 +465,7 @@ async def webhook(
     try:
         text   = payload.text.strip()
         source = payload.source or "api"
-        today  = datetime.now().strftime("%A, %d %B %Y")
+        today  = datetime.now(IST).strftime("%A, %d %B %Y")
         history = payload.history or []
 
         log.info(f"Received payload | user={user_id} | source={source} | text={text!r}")
