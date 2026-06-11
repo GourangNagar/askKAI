@@ -7,11 +7,11 @@ import os
 import uuid
 import json
 import logging
+import hashlib
 from pathlib import Path
 from datetime import datetime
 from typing import Optional, List
 import secrets
-import random
 
 import jwt
 from fastapi import FastAPI, Request, HTTPException, Depends
@@ -113,7 +113,7 @@ async def register(payload: AuthPayload):
     hashed_password = bcrypt.hashpw(payload.password.encode(), bcrypt.gensalt()).decode()
     
     # Generate 12-word recovery phrase
-    phrase_words = [random.choice(WORDLIST) for _ in range(12)]
+    phrase_words = [secrets.choice(WORDLIST) for _ in range(12)]
     recovery_phrase = " ".join(phrase_words)
     hashed_phrase = bcrypt.hashpw(recovery_phrase.encode(), bcrypt.gensalt()).decode()
     
@@ -130,13 +130,15 @@ async def register(payload: AuthPayload):
         pf = get_profile_file(email)
         # Create user dir if it doesn't exist
         get_user_dir(email)
-        with open(pf, "w") as f:
-            json.dump({"name": payload.name, "instructions": "I prefer concise and direct answers."}, f, indent=2)
+        lock_file = pf.with_suffix('.lock')
+        with FileLock(str(lock_file), timeout=5):
+            with open(pf, "w") as f:
+                json.dump({"name": payload.name, "instructions": "I prefer concise and direct answers."}, f, indent=2)
     
     # Generate JWT
     jwt_token = jwt.encode({
         "sub": email, 
-        "exp": datetime.utcnow().timestamp() + (30 * 24 * 3600)
+        "exp": int(datetime.utcnow().timestamp()) + (30 * 24 * 3600)
     }, JWT_SECRET, algorithm="HS256")
     
     return {"token": jwt_token, "recovery_phrase": recovery_phrase}
@@ -342,17 +344,7 @@ def delete_from_memory(doc_id: str, user_id: str) -> bool:
 
 # ── Prompts ───────────────────────────────────────────────────────────────────
 
-ROUTER_PROMPT = PromptTemplate.from_template(
-    """You are Kai, a personal AI assistant. Classify the following user message.
-Reply with exactly one word — either SAVE or QUERY.
-
-- SAVE: The message states a new fact, event, purchase, health log, expense, or any personal information that should be remembered.
-- QUERY: The message is a question or request for information, calculation, or recall.
-
-Message: {text}
-
-Classification:"""
-)
+# ROUTER_PROMPT removed — routing is now handled by SemanticRouter (no LLM call needed)
 
 EXTRACTION_PROMPT = PromptTemplate.from_template(
     """You are Kai. Extract and rewrite the following user statement as a clean, complete factual sentence suitable for long-term memory storage. 
@@ -406,17 +398,12 @@ Consolidated Memory Block:"""
 extraction_chain = EXTRACTION_PROMPT | llm | StrOutputParser()
 consolidation_chain = CONSOLIDATION_PROMPT | llm | StrOutputParser()
 
-def build_dynamic_rag_chain(user_id: str):
-    # Dynamic retriever locked to the specific user namespace
-    retriever = vectorstore.as_retriever(
-        search_type="similarity", 
-        search_kwargs={"k": 6, "filter": {"user_id": user_id}}
-    )
+def build_dynamic_rag_chain(user_id: str, query_embedding: list):
     
-    def format_docs(docs):
-        return "\n\n".join(
-            f"[Memory {i+1}]: {d.page_content}" for i, d in enumerate(docs)
-        )
+    def fetch_docs(_):
+        # Bypass the standard retriever and use the pre-computed embedding to save 1 API call
+        docs = vectorstore.similarity_search_by_vector(query_embedding, k=6, filter={"user_id": user_id})
+        return "\n\n".join(f"[Memory {i+1}]: {d.page_content}" for i, d in enumerate(docs))
 
     def load_profile(_):
         p = load_profile_from_disk(user_id)
@@ -424,7 +411,7 @@ def build_dynamic_rag_chain(user_id: str):
 
     return (
         {
-            "context":  lambda x: format_docs(retriever.invoke(x["question"])),
+            "context":  fetch_docs,
             "graph_context": lambda x: graph_engine.query_graph(x["question"], get_user_dir(user_id)),
             "history":  lambda x: "\n".join(x.get("history", [])) if x.get("history") else "No recent history.",
             "question": lambda x: x["question"],
@@ -441,7 +428,7 @@ def build_dynamic_rag_chain(user_id: str):
 class WebhookPayload(BaseModel):
     text: str
     source: Optional[str] = "api"
-    history: Optional[List[str]] = []
+    history: Optional[List[str]] = None
 
 class WebhookResponse(BaseModel):
     action: str
@@ -465,21 +452,22 @@ async def webhook(
         text   = payload.text.strip()
         source = payload.source or "api"
         today  = datetime.now().strftime("%A, %d %B %Y")
+        history = payload.history or []
 
         log.info(f"Received payload | user={user_id} | source={source} | text={text!r}")
 
         if not text:
             return JSONResponse(status_code=400, content={"error": "'text' field must not be empty.", "action": "error", "message": "Empty text"})
 
-        # Step 1: Route using Semantic Vectors (No LLM)
-        # If there is history, prepend the last message to give the router context
-        router_input = text
-        if payload.history:
-            router_input = payload.history[-1] + "\nUser: " + text
-        route = semantic_router.route_intent(router_input)
+        # Step 1: Pre-compute Embedding (Optimized to share between Router and DB)
+        # We must ONLY embed the raw text, because appending history makes questions look like statements to the Semantic Router
+        query_embedding = embeddings.embed_query(text)
+            
+        # Step 2: Route using Semantic Vectors + syntactic heuristic
+        route = semantic_router.route_intent(text=text, input_vector=query_embedding)
 
         # Step 2a: SAVE
-        if "SAVE" in route:
+        if route == "SAVE":
             clean_fact = extraction_chain.invoke({"text": text, "today": today}).strip()
             doc_id     = save_to_memory(clean_fact, source, text, user_id)
             
@@ -493,9 +481,28 @@ async def webhook(
                 doc_id=doc_id,
             )
 
-        # Step 2b: QUERY
-        rag_chain = build_dynamic_rag_chain(user_id)
-        answer = rag_chain.invoke({"question": text, "history": payload.history})
+        # Step 2b: BOTH — save the fact first, then answer the question
+        if route == "BOTH":
+            clean_fact = extraction_chain.invoke({"text": text, "today": today}).strip()
+            doc_id     = save_to_memory(clean_fact, source, text, user_id)
+            graph_engine.extract_and_store_graph(clean_fact, get_user_dir(user_id))
+            
+            # Now answer with the freshly updated memory
+            query_embedding = embeddings.embed_query(text)
+            rag_chain = build_dynamic_rag_chain(user_id, query_embedding)
+            answer = rag_chain.invoke({"question": text, "history": history})
+            log.info(f"BOTH route for [{user_id}]: saved '{clean_fact}' + answered")
+            
+            return WebhookResponse(
+                action="answered",
+                message=answer,
+                stored_fact=clean_fact,
+                doc_id=doc_id,
+            )
+
+        # Step 3: QUERY
+        rag_chain = build_dynamic_rag_chain(user_id, query_embedding)
+        answer = rag_chain.invoke({"question": text, "history": history})
         log.info(f"RAG answer for [{user_id}]: {answer}")
         
         return WebhookResponse(

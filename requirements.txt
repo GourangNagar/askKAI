@@ -7,12 +7,9 @@ langchain-openai
 chromadb
 python-dotenv
 pydantic
-
-
 pyjwt
 httpx
 itsdangerous
 bcrypt
-networkx
 numpy
 filelock
