@@ -57,8 +57,8 @@ class GraphEngine:
 
     def extract_and_store_graph(self, text: str, user_dir: Path):
         """Extracts entities and adds them to the user's SQLite graph."""
-        self._init_db(user_dir)
         try:
+            self._init_db(user_dir)
             res = self.extraction_chain.invoke({"text": text}).strip()
             # Clean markdown if present
             if res.startswith("```"):
