@@ -353,6 +353,9 @@ Today's date: {today}
 
 --- Relational Graph Context (Entities) ---
 {graph_context}
+
+--- Recent Conversation ---
+{history}
 --- End of Context ---
 
 Question: {question}
@@ -395,9 +398,10 @@ def build_dynamic_rag_chain(user_id: str):
 
     return (
         {
-            "context":  retriever | format_docs,
-            "graph_context": lambda question: graph_engine.query_graph(question, get_user_dir(user_id)),
-            "question": RunnablePassthrough(),
+            "context":  lambda x: format_docs(retriever.invoke(x["question"])),
+            "graph_context": lambda x: graph_engine.query_graph(x["question"], get_user_dir(user_id)),
+            "history":  lambda x: "\n".join(x.get("history", [])) if x.get("history") else "No recent history.",
+            "question": lambda x: x["question"],
             "today":    lambda _: datetime.now().strftime("%A, %d %B %Y"),
             "profile":  load_profile,
         }
@@ -411,6 +415,7 @@ def build_dynamic_rag_chain(user_id: str):
 class WebhookPayload(BaseModel):
     text: str
     source: Optional[str] = "api"
+    history: Optional[List[str]] = []
 
 class WebhookResponse(BaseModel):
     action: str
@@ -441,7 +446,11 @@ async def webhook(
             return JSONResponse(status_code=400, content={"error": "'text' field must not be empty.", "action": "error", "message": "Empty text"})
 
         # Step 1: Route using Semantic Vectors (No LLM)
-        route = semantic_router.route_intent(text)
+        # If there is history, prepend the last message to give the router context
+        router_input = text
+        if payload.history:
+            router_input = payload.history[-1] + "\nUser: " + text
+        route = semantic_router.route_intent(router_input)
 
         # Step 2a: SAVE
         if "SAVE" in route:
@@ -460,7 +469,7 @@ async def webhook(
 
         # Step 2b: QUERY
         rag_chain = build_dynamic_rag_chain(user_id)
-        answer = rag_chain.invoke(text)
+        answer = rag_chain.invoke({"question": text, "history": payload.history})
         log.info(f"RAG answer for [{user_id}]: {answer}")
         
         return WebhookResponse(

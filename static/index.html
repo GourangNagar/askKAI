@@ -665,6 +665,9 @@
             loadProfile();
         }
 
+        let chatHistory = [];
+        let currentTab = 'chat';
+
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
@@ -859,6 +862,11 @@
 
             input.value = '';
             appendMessage(text, true);
+            
+            // Add user message to history
+            chatHistory.push("User: " + text);
+            // Keep only the last 6 messages (3 turns)
+            if (chatHistory.length > 6) chatHistory = chatHistory.slice(-6);
 
             const btn = document.getElementById('send-btn');
             btn.innerHTML = '<div class="loader"></div>';
@@ -871,7 +879,11 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${SECRET_TOKEN}`
                     },
-                    body: JSON.stringify({ text, source: 'web' })
+                    body: JSON.stringify({ 
+                        text, 
+                        source: 'web',
+                        history: chatHistory.slice(0, -1) // Exclude the message just typed
+                    })
                 });
 
                 if (res.status === 401) return logout();
@@ -879,6 +891,7 @@
                 const data = await res.json();
                 if (res.ok) {
                     appendMessage(data.message, false);
+                    chatHistory.push("Kai: " + data.message);
                 } else {
                     appendMessage(`Error: ${data.message || data.error || 'Unknown error'}`, false);
                 }
