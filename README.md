@@ -1,14 +1,13 @@
 # Kai — Personal AI Assistant 🧠
 
-> Secure FastAPI Server · Multi-Tenant Agentic RAG · iOS Shortcuts Integration · Hacker UI
-
+> Secure FastAPI Server · Multi-Tenant Agentic RAG · iOS Shortcuts Integration 
 Kai is a highly optimized, fully private personal AI assistant designed to act as your "second brain". It effortlessly tracks expenses, remembers random facts, and answers your questions using advanced AI (Retrieval-Augmented Generation). 
 
 With the latest update, **Kai supports multiple users simultaneously!** Each user signs up with their email, gets their own secure "vault" of memories, and can securely sync data from their phone.
 
 ---
 
-## 🚀 How to Use Kai (For Non-Tech Users)
+## 🚀 How to Use Kai
 
 If Kai is already deployed on the cloud, here is how you use it from start to finish:
 
