@@ -61,8 +61,8 @@ class GraphEngine:
         try:
             res = self.extraction_chain.invoke({"text": text}).strip()
             # Clean markdown if present
-            if res.startswith("```json"):
-                res = res[7:-3]
+            if res.startswith("```"):
+                res = res.strip('`').strip('json').strip()
             tuples = json.loads(res)
             
             with sqlite3.connect(self._get_db_path(user_dir)) as conn:
@@ -85,8 +85,8 @@ class GraphEngine:
             
         try:
             res = self.query_chain.invoke({"text": question}).strip()
-            if res.startswith("```json"):
-                res = res[7:-3]
+            if res.startswith("```"):
+                res = res.strip('`').strip('json').strip()
             entities = json.loads(res)
             
             graph_context = []
