@@ -19,8 +19,9 @@ If Kai is already deployed on the cloud, here is how you use it from start to fi
 
 ### 2. Talk to Kai
 Once logged in, you will see a sleek chat interface.
-- **Save a Memory:** Just tell Kai a fact! Type *"I bought a coffee for $4.50 today"* or *"My friend Sarah is allergic to peanuts"*. Kai will automatically detect that this is a fact and save it to your private vault.
+- **Save a Memory:** Just tell Kai a fact! Type *"I bought a coffee for $4.50 today"* or *"My friend Sarah is allergic to peanuts"*. Kai's math-based **Semantic Router** will instantly detect that this is a fact and save it to your private vault.
 - **Ask a Question:** Ask *"How much have I spent on coffee?"* or *"What is Sarah allergic to?"* Kai will scan your private vault and instantly answer!
+- **Do Both at Once:** Type *"I spent $50 on groceries, how much money do I have left?"* Kai's **BOTH routing mode** (powered by syntactic heuristics) will smartly save your expense *and* answer your question in one go!
 
 ### 3. Customize Your Profile
 Click the **Profile** tab in the top right. Here you can tell Kai exactly how you want to be treated. 
@@ -103,7 +104,14 @@ uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 Open **http://localhost:8000** in your browser.
 
-### 3. Google Cloud Run Deployment
+### 3. Testing
+To ensure the backend works properly, a comprehensive smoke test suite is included.
+```bash
+python smoke_test.py
+```
+This tests all auth guards, semantic routing edge cases, and SQLite graph extractions.
+
+### 4. Google Cloud Run Deployment
 Kai is fully Dockerized and ready for Google Cloud Run serverless deployment. 
 
 ```bash
