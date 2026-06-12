@@ -78,17 +78,19 @@ This shortcut asks what you bought and saves it silently to your phone.
 This shortcut reads your expenses and sends them to your private Kai vault.
 
 1. Create a new shortcut named "Sync Kai".
-2. Add the **Get File** action (Turn OFF "Show Document Picker", Path: `kai_expenses.txt`, Turn OFF "Error If Not Found").
+2. Add the **Get File** action (Turn OFF "Show Document Picker", Path: `kai_expenses.txt`, Turn OFF "Error If Not Found"). *Ensure this is explicitly pulling from the `Shortcuts` folder!*
 3. Add an **If** action: If **File** `has any value`.
 4. Inside the If block, add a **Text** action: `Here are my expenses for today: [File]`
 5. Inside the If block, add a **Get Contents of URL** action:
-   - URL: `https://YOUR_KAI_URL.run.app/webhook`
+   - URL: `https://YOUR_KAI_URL.run.app/webhook` *(Important: it must end with /webhook)*
    - Method: **POST**
    - Headers: Key = `Authorization`, Text = `Bearer <PASTE_YOUR_API_TOKEN_HERE>`
    - Request Body: **JSON**
    - Add field: `text` (Text) = `[Text]` (from step 4)
    - Add field: `source` (Text) = `ios_midnight_batch`
-6. After the URL action (still inside the If block), add a **Delete File** action and set it to delete the `[File]`.
+6. To avoid iOS privacy popups asking for permission to delete files, we will use an overwrite hack!
+7. Still inside the If block, add a blank **Text** action (do not type anything inside it).
+8. Add a **Save File** action. Set it to save the blank `[Text]` to `kai_expenses.txt`. Tap the arrow on the block and turn **ON** `Overwrite If File Exists`.
 
 ### Step 4: Midnight Automation
 
